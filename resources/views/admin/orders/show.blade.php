@@ -9,10 +9,10 @@
                 </div>
 
                 <ul class="divide-y divide-gray-50">
-                    @foreach($order->items as $item)
+                    @foreach ($order->items as $item)
                         <li class="p-6 flex items-center gap-4">
                             <div class="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center p-2">
-                                @if($item->product && $item->product->product_image)
+                                @if ($item->product && $item->product->product_image)
                                     <img src="{{ asset($item->product->product_image) }}"
                                         class="w-full h-full object-contain mix-blend-multiply">
                                 @else
@@ -20,7 +20,8 @@
                                 @endif
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm font-bold text-gray-800">{{ $item->product->name ?? 'Deleted Product' }}
+                                <p class="text-sm font-bold text-gray-800">
+                                    {{ $item->product->name ?? 'Deleted Product' }}
                                 </p>
                                 <p class="text-xs text-gray-500">Qty: {{ $item->quantity }} x
                                     ${{ number_format($item->price, 2) }}</p>
@@ -65,12 +66,20 @@
                         <select name="status"
                             class="w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 shadow-sm text-sm font-semibold"
                             required>
-                            <option value="Pending" {{ $order->status === 'Pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="Processing" {{ $order->status === 'Processing' ? 'selected' : '' }}>Processing
+                            <option value="Pending" {{ strtolower($order->status) === 'pending' ? 'selected' : '' }}>
+                                Pending
                             </option>
-                            <option value="Completed" {{ $order->status === 'Completed' ? 'selected' : '' }}>Completed
+                            <option value="Paid" {{ strtolower($order->status) === 'paid' ? 'selected' : '' }}>Paid
                             </option>
-                            <option value="Cancelled" {{ $order->status === 'Cancelled' ? 'selected' : '' }}>Cancelled
+                            <option value="Processing"
+                                {{ strtolower($order->status) === 'processing' ? 'selected' : '' }}>
+                                Processing
+                            </option>
+                            <option value="Completed"
+                                {{ strtolower($order->status) === 'completed' ? 'selected' : '' }}>Completed
+                            </option>
+                            <option value="Cancelled"
+                                {{ strtolower($order->status) === 'cancelled' ? 'selected' : '' }}>Cancelled
                             </option>
                         </select>
                     </div>
