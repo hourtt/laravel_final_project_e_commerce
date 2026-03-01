@@ -100,7 +100,7 @@
                     <p class="text-xs text-gray-400 mt-0.5">Latest {{ $recentProducts->count() }} products in the store
                     </p>
                 </div>
-                <a href="#"
+                <a href="{{ route('admin.products.create') }}"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/30">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd"
@@ -209,7 +209,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">
-                                    No products found. <a href="#"
+                                    No products found. <a href="{{ route('admin.products.create') }}"
                                         class="text-blue-600 font-semibold hover:underline">Add
                                         your first product →</a>
                                 </td>
@@ -223,7 +223,8 @@
                 <p class="text-xs text-gray-400">Showing {{ $recentProducts->count() }} of {{ $totalProducts }}
                     products
                 </p>
-                <a href="#" class="text-xs font-semibold text-blue-600 hover:underline">View All Products →</a>
+                <a href="{{ route('admin.products.index') }}"
+                    class="text-xs font-semibold text-blue-600 hover:underline">View All Products →</a>
             </div>
         </div>
 
