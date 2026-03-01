@@ -25,11 +25,14 @@
                      <div class="flex items-center gap-4 min-w-0">
                          <div
                              class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                             @if ($product->product_image)
-                                 <img src="{{ asset($product->product_image) }}"
-                                     class="w-full h-full object-contain mix-blend-multiply" alt="{{ $product->name }}">
+                             @php $imageUrl = $product->image_url; @endphp
+                             @if ($imageUrl)
+                                 <img src="{{ $imageUrl }}" class="w-full h-full object-contain mix-blend-multiply"
+                                     alt="{{ $product->name }}"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <span class="text-2xl hidden items-center justify-center w-full h-full">📦</span>
                              @else
-                                 <span class="text-2xl">📦</span>
+                                 <span class="text-2xl flex items-center justify-center w-full h-full">📦</span>
                              @endif
                          </div>
                          <div class="min-w-0">
