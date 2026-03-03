@@ -146,19 +146,34 @@
                     showToast(data.message || 'Error updating cart.', 'error');
                 } else {
                     /*
-                     * Server confirmed. Correct from server-truth values in case
-                     * the client calculation drifted (floating-point, concurrency).
-                     * Only re-fire if there's a meaningful difference (> 0.01).
+                     * Server confirmed. Always correct the odometer and _prevTotal
+                     * from server truth to prevent display drift on the Total.
+                     * Use serverGrand if returned, otherwise keep the optimistic value.
                      */
-                    const serverRow = parseFloat(data.row_subtotal) || newRowTotal;
-                    const serverGrand = parseFloat(data.grand_total) || newGrandTotal;
+                    const serverRow = parseFloat(data.row_subtotal);
+                    const serverGrand = parseFloat(data.grand_total);
 
-                    if (Math.abs(serverRow - newRowTotal) > 0.01) {
+                    // Sync row odometer if server returned a valid value that differs
+                    if (!isNaN(serverRow) && Math.abs(serverRow - newRowTotal) > 0.01) {
                         _fireRowEvent(productId, serverRow, serverRow > newRowTotal ? 'up' : 'down');
                     }
-                    if (Math.abs(serverGrand - newGrandTotal) > 0.01) {
-                        _fireGrandEvent(serverGrand, serverGrand > newGrandTotal ? 'up' : 'down');
+
+                    // Always sync grand total from server — prevents stale Total display
+                    if (!isNaN(serverGrand)) {
+                        if (Math.abs(serverGrand - newGrandTotal) > 0.01) {
+                            _fireGrandEvent(serverGrand, serverGrand > newGrandTotal ? 'up' : 'down');
+                        }
                         _prevTotal = serverGrand;
+
+                        // Also sync the plain Sub Total text display
+                        if (subDisplay) {
+                            subDisplay.textContent = '$' + serverGrand.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }) + ' USD';
+                        }
+                    } else {
+                        _prevTotal = newGrandTotal;
                     }
                 }
 
@@ -186,17 +201,67 @@
     });
 
     /*──────────────────────────────────────────────────────────────────
-     |  CHECKOUT BUTTON — trigger ABA PayWay popup
+     |  CHECKOUT BUTTON — fetch fresh ABA params, then open popup
+     |
+     |  Why we re-fetch before every popup open:
+     |  The hash, amount, and req_time are generated at page load. If the
+     |  user changes quantity after load, those values become stale. We
+     |  get fresh params from payment.prepare (which uses the current cart)
+     |  so the ABA KHQR popup always shows the correct, up-to-date total.
      ──────────────────────────────────────────────────────────────────*/
     $(document).ready(function() {
         $('#checkout_button').on('click', function(e) {
             e.preventDefault();
-            // Append selected payment option radio if one is checked (optional)
-            if ($('.payment_option:checked').length > 0) {
-                $('#aba_merchant_request').append($('.payment_option:checked'));
-            }
-            // Let ABA PayWay SDK open its KHQR popup modal
-            AbaPayway.checkout();
+
+            const btn = $(this);
+            const txt = document.getElementById('checkout_text');
+            btn.prop('disabled', true);
+            if (txt) txt.textContent = 'Processing…';
+
+            // Fetch fresh payment params (hash, amount, tran_id, req_time)
+            // so the ABA popup always reflects the current cart total
+            fetch('{{ route('payment.prepare') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                })
+                .then(async res => {
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        showToast(data.error || 'Failed to prepare payment. Please try again.',
+                            'error');
+                        btn.prop('disabled', false);
+                        if (txt) txt.textContent = 'Checkout Now';
+                        return;
+                    }
+
+                    // Inject fresh server values into the ABA hidden form fields
+                    const fields = ['hash', 'tran_id', 'amount', 'merchant_id', 'req_time',
+                        'currency', 'payment_option', 'return_url', 'continue_success_url'
+                    ];
+                    fields.forEach(f => {
+                        const el = document.getElementById(f);
+                        if (el && data[f] !== undefined) el.value = data[f];
+                    });
+
+                    btn.prop('disabled', false);
+                    if (txt) txt.textContent = 'Checkout Now';
+
+                    // Open ABA PayWay KHQR popup — now with up-to-date amount
+                    if ($('.payment_option:checked').length > 0) {
+                        $('#aba_merchant_request').append($('.payment_option:checked'));
+                    }
+                    AbaPayway.checkout();
+                })
+                .catch(() => {
+                    showToast('A network error occurred. Please try again.', 'error');
+                    btn.prop('disabled', false);
+                    if (txt) txt.textContent = 'Checkout Now';
+                });
         });
     });
 
