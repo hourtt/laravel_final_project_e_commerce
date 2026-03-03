@@ -200,7 +200,7 @@
 
              {{-- Checkout Now (ABA PayWay form) --}}
              <div class="mt-8">
-                 <form method="POST"
+                 <form method="POST" target="aba_webservice"
                      action="https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase"
                      id="aba_merchant_request">
                      <input type="hidden" name="hash" value="{{ $hash ?? '' }}" id="hash" />
