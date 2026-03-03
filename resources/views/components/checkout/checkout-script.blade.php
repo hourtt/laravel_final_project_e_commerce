@@ -1,3 +1,5 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://checkout.payway.com.kh/plugins/checkout2-0.js"></script>
 <script>
     /*──────────────────────────────────────────────────────────────────
      |  CHECKOUT SCRIPTS
@@ -184,55 +186,17 @@
     });
 
     /*──────────────────────────────────────────────────────────────────
-     |  CHECKOUT BUTTON — fetch fresh ABA hash just before submit
+     |  CHECKOUT BUTTON — trigger ABA PayWay popup
      ──────────────────────────────────────────────────────────────────*/
-    document.addEventListener('DOMContentLoaded', () => {
-        const checkoutBtn = document.getElementById('checkout_button');
-        if (!checkoutBtn) return;
-
-        checkoutBtn.addEventListener('click', function(e) {
+    $(document).ready(function() {
+        $('#checkout_button').on('click', function(e) {
             e.preventDefault();
-
-            const btn = this;
-            const txt = document.getElementById('checkout_text');
-            btn.disabled = true;
-            if (txt) txt.textContent = 'Processing…';
-
-            fetch('{{ route('payment.prepare') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json',
-                    },
-                })
-                .then(async res => {
-                    const data = await res.json();
-
-                    if (!res.ok) {
-                        showToast(data.error || 'Failed to prepare payment. Please try again.',
-                            'error');
-                        btn.disabled = false;
-                        if (txt) txt.textContent = 'Checkout Now';
-                        return;
-                    }
-
-                    /* Inject server-fresh values into all ABA hidden fields */
-                    const fields = ['hash', 'tran_id', 'amount', 'merchant_id', 'req_time',
-                        'currency', 'payment_option', 'return_url', 'continue_success_url'
-                    ];
-                    fields.forEach(f => {
-                        const el = document.getElementById(f);
-                        if (el && data[f] !== undefined) el.value = data[f];
-                    });
-
-                    document.getElementById('aba_merchant_request').submit();
-                })
-                .catch(() => {
-                    showToast('A network error occurred. Please try again.', 'error');
-                    btn.disabled = false;
-                    if (txt) txt.textContent = 'Checkout Now';
-                });
+            // Append selected payment option radio if one is checked (optional)
+            if ($('.payment_option:checked').length > 0) {
+                $('#aba_merchant_request').append($('.payment_option:checked'));
+            }
+            // Let ABA PayWay SDK open its KHQR popup modal
+            AbaPayway.checkout();
         });
     });
 
