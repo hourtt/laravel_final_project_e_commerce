@@ -215,7 +215,7 @@
                      <input type="hidden" name="continue_success_url" value="{{ $continue_success_url ?? '' }}"
                          id="continue_success_url" />
 
-                     <button type="submit" id="checkout_button"
+                     <button type="button" id="checkout_button"
                          class="w-full relative flex items-center justify-center py-4 bg-black hover:bg-gray-800 active:scale-[0.98] text-white text-sm font-bold rounded-2xl transition-all shadow-lg shadow-black/10 tracking-wide">
                          <span id="checkout_text">Checkout Now</span>
                      </button>
