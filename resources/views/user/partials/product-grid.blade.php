@@ -7,13 +7,16 @@
         'Mouse' => '🖱️',
         'Keyboards' => '⌨️',
     ];
+    $search = $search ?? '';
 @endphp
 
 {{-- Results Count --}}
 <div class="flex items-center justify-between mb-6">
     <p class="text-sm text-gray-500">
         Showing <span class="font-semibold text-gray-800">{{ $products->count() }}</span>
-        @if ($category !== 'All')
+        @if ($search !== '')
+            results for <span class="font-semibold text-blue-600">"{{ $search }}"</span>
+        @elseif ($category !== 'All')
             results in <span class="font-semibold text-blue-600">{{ $category }}</span>
         @else
             products
@@ -24,16 +27,24 @@
 {{-- Product Grid --}}
 @if ($products->isEmpty())
     <div class="flex flex-col items-center justify-center py-24 text-center">
-        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4">📭</div>
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4">
+            {{ $search !== '' ? '🔍' : '📭' }}
+        </div>
         <h3 class="text-lg font-bold text-gray-800 mb-1">No Products Found</h3>
-        <p class="text-gray-500 text-sm">There are no products in this category yet.</p>
-        <button onclick="filterProducts('All')"
+        <p class="text-gray-500 text-sm">
+            @if ($search !== '')
+                No products match <span class="font-semibold">"{{ $search }}"</span>. Try a different keyword.
+            @else
+                There are no products in this category yet.
+            @endif
+        </p>
+        <button onclick="clearSearch()"
             class="mt-6 px-6 py-2.5 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
-            View All Products
+            {{ $search !== '' ? 'Clear Search' : 'View All Products' }}
         </button>
     </div>
 @else
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-start">
         @foreach ($products as $product)
             <div
                 class="group relative bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer">
@@ -90,15 +101,30 @@
                 </div>
 
                 {{-- Info --}}
-                <div class="p-4 flex flex-col gap-1.5 flex-1">
+                <div class="p-4 flex flex-col gap-1.5">
                     <span
                         class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">{{ $product->category->name ?? 'Uncategorized' }}</span>
                     <h3
                         class="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
                         {{ $product->name }}
                     </h3>
-                    <p class="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{{ $product->description }}</p>
-                    <div class="mt-auto pt-3 flex items-center justify-between">
+                    {{-- Expandable Description (accordion + gradient fade) --}}
+                    <div x-data="{ open: false, uid: {{ $product->id }} }" @close-descs.window="if ($event.detail.except !== uid) open = false"
+                        class="mt-0.5">
+                        <div class="relative">
+                            <div class="overflow-hidden transition-all duration-300 ease-in-out text-[11px] text-gray-400 leading-[1.5rem]"
+                                :style="open ? 'max-height: 20rem' : 'max-height: 4.5rem'">{{ $product->description }}
+                            </div>
+                            {{-- Soft gradient fade when collapsed --}}
+                            <div x-show="!open"
+                                class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none">
+                            </div>
+                        </div>
+                        <button @click.stop="open = !open; if (open) $dispatch('close-descs', { except: uid })"
+                            class="text-[10px] text-gray-500 hover:text-blue-700 font-semibold mt-1 focus:outline-none transition-colors duration-150"
+                            x-text="open ? 'See Less' : 'See More'"></button>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
                         <p class="text-base font-extrabold text-gray-900">${{ number_format($product->price, 2) }}</p>
                         <span class="text-[10px] text-gray-400 font-medium">Stock:
                             {{ $product->stock ?? 'N/A' }}</span>

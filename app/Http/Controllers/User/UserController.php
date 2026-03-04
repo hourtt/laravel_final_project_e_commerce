@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -11,11 +13,13 @@ use Illuminate\Support\Facades\DB;
 class UserController extends Controller
 {
     /**
-     * Shared logic: resolve category + products.
+     * Shared logic: resolve category + products, with optional search.
      */
     private function resolveProducts(Request $request): array
     {
         $category   = $request->query('category', 'All');
+        //* Define $search variable for user searching product 
+        $search     = trim($request->query('search', ''));
         $categories = Category::pluck('name')->toArray();
         array_unshift($categories, 'All');
 
@@ -23,17 +27,24 @@ class UserController extends Controller
             ->select('products.*')
             ->leftJoin('categories', 'categories.id', '=', 'products.category_id');
 
-        if($category === "All"){
-            // Random products for the 'All' tab
+        // Search filter — case-insensitive via LOWER() + LIKE
+        if ($search !== '') {
+            $term = '%' . strtolower($search) . '%';
+            $query->whereRaw('LOWER(products.name) LIKE ?', [$term]);
+            // When searching, ignore category filter and show newest first
+            $query->orderBy('products.id', 'desc');
+        } elseif ($category === 'All') {
+            // Random products for the 'All' tab (no search)
             $query->inRandomOrder();
         } else {
             // Specific category: show newest first
             $query->where('categories.name', $category)
                   ->orderBy('products.id', 'desc');
         }
+
         $products = $query->get();
 
-        return compact('products', 'categories', 'category');
+        return compact('products', 'categories', 'category', 'search');
     }
 
     /**
@@ -70,11 +81,27 @@ class UserController extends Controller
             'products'   => $products,
             'category'   => $category,
             'categories' => $categories,
+            'search'     => $search,
         ] = $this->resolveProducts($request);
 
-        return view('user.partials.product-grid', compact('products', 'category', 'categories'));
+        return view('user.partials.product-grid', compact('products', 'category', 'categories', 'search'));
     }
 
+    /**
+     * AJAX search endpoint — returns the product grid partial
+     * filtered by the ?search= query param (case-insensitive).
+     */
+    public function search(Request $request)
+    {
+        [
+            'products'   => $products,
+            'category'   => $category,
+            'categories' => $categories,
+            'search'     => $search,
+        ] = $this->resolveProducts($request);
+
+        return view('user.partials.product-grid', compact('products', 'category', 'categories', 'search'));
+    }
 
 
     /**
@@ -140,6 +167,8 @@ class UserController extends Controller
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] = $quantity;
             session()->put('cart', $cart);
+            // Keep the pending order in sync with the updated quantity
+            $this->syncPendingOrder();
         }
 
         // Recalculate totals
@@ -178,11 +207,87 @@ class UserController extends Controller
         if (isset($cart[$id])) {
             unset($cart[$id]);
             session()->put('cart', $cart);
+            // Keep the pending order in sync after item removal
+            $this->syncPendingOrder();
         }
         
         return redirect()->route('checkout')->with('success', "{$productName} removed from cart.");
     }
+    /**
+     * User's own order history.
+     */
+    public function orders(Request $request)
+    {
+        $orders = auth()->user()
+            ->orders()
+            ->with('items.product')
+            ->latest()
+            ->paginate(15);
 
+        return view('user.orders', compact('orders'));
+    }
 
+    /**
+     * User's single order detail.
+     */
+    public function orderShow($id)
+    {
+        $order = auth()->user()
+            ->orders()
+            ->with('items.product')
+            ->findOrFail($id);
 
+        return view('user.orders-show', compact('order'));
+    }
+
+    /**
+     * Sync the current user's Pending order (tracked via session 'order_id')
+     * with the current cart session, so order history always reflects the
+     * latest quantities and products — not stale data from a previous page load.
+     *
+     * Called from updateCart() and removeFromCart() so any cart change
+     * is immediately reflected in the pending order.
+     */
+    private function syncPendingOrder(): void
+    {
+        $orderId = session('order_id');
+        if (!$orderId) return;
+
+        $order = Order::where('id', $orderId)
+            ->where('user_id', auth()->id())
+            ->where('status', 'Pending')
+            ->first();
+
+        if (!$order) return;
+
+        $cart = session('cart', []);
+
+        if (empty($cart)) {
+            OrderItem::where('order_id', $orderId)->delete();
+            $order->update(['total_price' => 0]);
+            return;
+        }
+
+        $products = Product::whereIn('id', array_keys($cart))->get();
+        $total = 0;
+        $cartProductIds = [];
+
+        foreach ($products as $product) {
+            $qty = $cart[$product->id]['quantity'] ?? 1;
+            $total += $product->price * $qty;
+            $cartProductIds[] = $product->id;
+
+            OrderItem::updateOrCreate(
+                ['order_id' => $orderId, 'product_id' => $product->id],
+                ['quantity' => $qty, 'price' => $product->price]
+            );
+        }
+
+        // Remove DB items that are no longer in the session cart
+        OrderItem::where('order_id', $orderId)
+            ->whereNotIn('product_id', $cartProductIds)
+            ->delete();
+
+        $order->update(['total_price' => $total]);
+    }
 }

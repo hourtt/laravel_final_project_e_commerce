@@ -12,11 +12,13 @@
                     @foreach ($order->items as $item)
                         <li class="p-6 flex items-center gap-4">
                             <div class="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center p-2">
-                                @if ($item->product && $item->product->product_image)
-                                    <img src="{{ asset($item->product->product_image) }}"
-                                        class="w-full h-full object-contain mix-blend-multiply">
+                                @if ($item->product && $item->product->image_url)
+                                    <img src="{{ $item->product->image_url }}"
+                                        class="w-full h-full object-contain mix-blend-multiply"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span class="text-2xl hidden items-center justify-center w-full h-full">📦</span>
                                 @else
-                                    <span class="text-2xl">📦</span>
+                                    <span class="text-2xl flex items-center justify-center w-full h-full">📦</span>
                                 @endif
                             </div>
                             <div class="flex-1">

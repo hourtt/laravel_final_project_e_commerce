@@ -72,7 +72,35 @@ class PaymentController extends Controller
                     }
                 }
 
-                if (!$order) {
+                if ($order) {
+                    // ── Sync existing pending order with the current cart ──
+                    // This ensures removed / swapped products don't linger in
+                    // order history when the user changes their cart and revisits checkout.
+                    DB::beginTransaction();
+
+                    $cartProductIds = $products->pluck('id')->toArray();
+
+                    // Delete items that are no longer in the cart
+                    OrderItem::where('order_id', $order->id)
+                        ->whereNotIn('product_id', $cartProductIds)
+                        ->delete();
+
+                    // Add / update items that ARE in the cart
+                    foreach ($products as $product) {
+                        $qty = $cart[$product->id]['quantity'];
+                        OrderItem::updateOrCreate(
+                            ['order_id' => $order->id, 'product_id' => $product->id],
+                            ['quantity' => $qty, 'price' => $product->price]
+                        );
+                    }
+
+                    // Persist the recalculated total
+                    $order->update(['total_price' => $total]);
+
+                    DB::commit();
+
+                } else {
+                    // ── No valid pending order — create a fresh one ──
                     DB::beginTransaction();
                     $order = Order::create([
                         'user_id'     => Auth::id(),

@@ -14,6 +14,8 @@ Route::get('/', [UserController::class, 'index'])->name('home');
 
 // AJAX: products filter (no auth required so guests can filter too)
 Route::get('/products/filter', [UserController::class, 'filter'])->name('products.filter');
+// AJAX: products search (case-insensitive, no auth required)
+Route::get('/products/search', [UserController::class, 'search'])->name('products.search');
 
 //* User routes (logged in)
 Route::middleware(['auth'])->group(function () {
@@ -27,6 +29,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payment/check', [PaymentController::class, 'checkTransaction'])->name('payment.check');
     // Regenerate ABA hash with current cart total just before form submit
     Route::post('/payment/prepare', [PaymentController::class, 'preparePayment'])->name('payment.prepare');
+
+    // User order history
+    Route::get('/orders', [UserController::class, 'orders'])->name('user.orders');
+    Route::get('/orders/{id}', [UserController::class, 'orderShow'])->name('user.orders.show');
 });
 
 // Since Pushback is a Webhook sent by ABA servers, it doesn't need 'auth' middleware
