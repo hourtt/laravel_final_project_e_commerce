@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Voucher;
 use App\Services\PayWayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,8 +33,12 @@ class PaymentController extends Controller
         $cart = session()->get('cart', []);
 
         // Initialize variables to avoid "undefined variable" errors in the view
-        $cartData = [];
-        $total = 0;
+        $cartData        = [];
+        $total           = 0;
+        $voucherDiscount = 0.0;
+        $voucherCode     = null;
+        $discountedTotal = 0.0;
+        $cartProductIds  = [];   // passed to view so checkout-script can send it via AJAX
         $hash = $tranId = $amount = $merchant_id = $req_time = $currency = $payment_option = $return_url = $continue_success_url = '';
 
         if (!empty($cart)) {
@@ -55,6 +60,16 @@ class PaymentController extends Controller
                 ];
             }
 
+            // Apply session voucher discount if any
+            $voucherDiscount = (float) session('voucher_discount', 0);
+            $voucherCode     = session('voucher_code');
+            $discountedTotal = max(0, $total - $voucherDiscount);
+
+            // Build the product ID list for the JS voucher apply AJAX call.
+            // Done here in the controller so it is available in the layout's
+            // @include('checkout-script'), which runs outside product-state scope.
+            $cartProductIds = $products->pluck('id')->map(fn($id) => (int) $id)->toArray();
+
             try {
                 // Reuse an existing Pending order if it belongs to this user,
                 // so refreshing the checkout page does not spawn duplicate orders.
@@ -74,8 +89,6 @@ class PaymentController extends Controller
 
                 if ($order) {
                     // ── Sync existing pending order with the current cart ──
-                    // This ensures removed / swapped products don't linger in
-                    // order history when the user changes their cart and revisits checkout.
                     DB::beginTransaction();
 
                     $cartProductIds = $products->pluck('id')->toArray();
@@ -94,8 +107,12 @@ class PaymentController extends Controller
                         );
                     }
 
-                    // Persist the recalculated total
-                    $order->update(['total_price' => $total]);
+                    // Persist total + voucher info so admin can see which code was used
+                    $order->update([
+                        'total_price'      => $discountedTotal,
+                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
+                    ]);
 
                     DB::commit();
 
@@ -103,9 +120,11 @@ class PaymentController extends Controller
                     // ── No valid pending order — create a fresh one ──
                     DB::beginTransaction();
                     $order = Order::create([
-                        'user_id'     => Auth::id(),
-                        'total_price' => $total,
-                        'status'      => 'Pending',
+                        'user_id'          => Auth::id(),
+                        'total_price'      => $discountedTotal,
+                        'status'           => 'Pending',
+                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
@@ -120,11 +139,11 @@ class PaymentController extends Controller
                     session(['order_id' => $order->id]);
                 }
 
-                // GENERATE ABA PARAMS
+                // GENERATE ABA PARAMS (use discounted total)
                 $merchant_id          = config('payway.merchant_id');
                 $req_time             = time();
                 $tranId               = 'ORD-' . $order->id . '-' . $req_time;
-                $amount               = number_format($total, 2, '.', '');
+                $amount               = number_format($discountedTotal, 2, '.', '');
                 $currency             = 'USD';
                 $payment_option       = 'abapay_khqr';
                 $return_url           = base64_encode(route('payment.check'));
@@ -145,7 +164,11 @@ class PaymentController extends Controller
         }
         return view('user.checkout', compact(
             'cartData',
+            'cartProductIds',
             'total',
+            'voucherDiscount',
+            'voucherCode',
+            'discountedTotal',
             'hash',
             'tranId',
             'amount',
@@ -175,10 +198,10 @@ class PaymentController extends Controller
         $productIds = array_keys($cart);
         $products   = Product::whereIn('id', $productIds)->get();
 
+        // ── Recalculate subtotal ──────────────────────────────────────────────
         $total = 0;
         foreach ($products as $product) {
             $qty = $cart[$product->id]['quantity'] ?? 0;
-            
             if ($product->stock < $qty) {
                 return response()->json([
                     'error' => "Insufficient stock for {$product->name}. Only {$product->stock} left.",
@@ -187,50 +210,89 @@ class PaymentController extends Controller
             $total += $product->price * $qty;
         }
 
-        $orderId = session('order_id');
-        $order   = $orderId ? Order::find($orderId) : null;
+        // ── Apply voucher discount ────────────────────────────────────────────
+        $voucherDiscount = (float) session('voucher_discount', 0);
+        $discountedTotal = max(0, $total - $voucherDiscount);
 
-        if (!$order || $order->status !== 'Pending' || $order->user_id !== Auth::id()) {
-            return response()->json(['error' => 'No valid pending order found. Please reload the page.'], 422);
+        try {
+            // ── Resolve order ─────────────────────────────────────────────────
+            // Find the existing pending order OR create a fresh one with all items.
+            // This prevents the "0 items / $0.00" bug that occurred when the session
+            // order_id was stale or the order was somehow invalid.
+            $orderId = session('order_id');
+            $order   = $orderId ? Order::find($orderId) : null;
+
+            DB::transaction(function () use (
+                &$order, $products, $cart, $discountedTotal, $voucherDiscount
+            ) {
+                // Resolve session voucher fields inside closure
+                $voucherCode = session('voucher_code');
+
+                if ($order && $order->status === 'Pending' && $order->user_id === Auth::id()) {
+                    // ── Sync existing pending order ───────────────────────────
+                    $cartProductIds = $products->pluck('id')->toArray();
+
+                    // Remove items that are no longer in the cart
+                    OrderItem::where('order_id', $order->id)
+                        ->whereNotIn('product_id', $cartProductIds)
+                        ->delete();
+
+                    // Upsert current cart items
+                    foreach ($products as $product) {
+                        $qty = $cart[$product->id]['quantity'];
+                        OrderItem::updateOrCreate(
+                            ['order_id'   => $order->id, 'product_id' => $product->id],
+                            ['quantity'   => $qty,       'price'      => $product->price]
+                        );
+                    }
+
+                    $order->update([
+                        'total_price'      => $discountedTotal,
+                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
+                    ]);
+
+                } else {
+                    // ── No valid order in session — create a fresh one ────────
+                    // This handles: page loaded without cart, session expired,
+                    // or stale order_id pointing to a non-Pending / foreign order.
+                    $order = Order::create([
+                        'user_id'          => Auth::id(),
+                        'total_price'      => $discountedTotal,
+                        'status'           => 'Pending',
+                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
+                    ]);
+
+                    foreach ($products as $product) {
+                        $qty = $cart[$product->id]['quantity'];
+                        OrderItem::create([
+                            'order_id'   => $order->id,
+                            'product_id' => $product->id,
+                            'quantity'   => $qty,
+                            'price'      => $product->price,
+                        ]);
+                    }
+
+                    session(['order_id' => $order->id]);
+                }
+            });
+
+        } catch (\Exception $e) {
+            Log::error('preparePayment: order sync failed', [
+                'user_id' => Auth::id(),
+                'error'   => $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Could not prepare your order. Please reload the checkout page.',
+            ], 500);
         }
 
-        // Update the order's stored total in case quantities changed
-       DB::transaction(function () use ($order, $products, $cart, $total) {
-
-        // Keep track of product IDs currently in cart
-        $cartProductIds = [];
-
-        foreach ($products as $product) {
-            $qty = $cart[$product->id]['quantity'];
-            $cartProductIds[] = $product->id;
-
-            // Update existing item or create if not exists
-            OrderItem::updateOrCreate(
-                [
-                    'order_id' => $order->id,
-                    'product_id' => $product->id,
-                ],
-                [
-                    'quantity' => $qty,
-                    'price' => $product->price,
-                ]
-            );
-        }
-
-        // Remove items that were deleted from cart
-        OrderItem::where('order_id', $order->id)
-        ->whereNotIn('product_id', $cartProductIds)
-        ->delete();
-
-        // Update order total
-        $order->update([
-        'total_price' => $total
-        ]);
-    });
+        // ── Generate fresh ABA payment parameters ─────────────────────────────
         $merchant_id          = config('payway.merchant_id');
         $req_time             = time();
         $tranId               = 'ORD-' . $order->id . '-' . $req_time;
-        $amount               = number_format($total, 2, '.', '');
+        $amount               = number_format($discountedTotal, 2, '.', '');
         $currency             = 'USD';
         $payment_option       = 'abapay_khqr';
         $return_url           = base64_encode(route('payment.check'));
@@ -321,6 +383,16 @@ class PaymentController extends Controller
                 }
             }
         });
+
+        // Increment voucher used_count if one was applied
+        $voucherId = session('voucher_id');
+        if ($voucherId) {
+            $voucher = Voucher::find($voucherId);
+            if ($voucher) {
+                $voucher->incrementUsage();
+            }
+            session()->forget(['voucher_id', 'voucher_code', 'voucher_discount']);
+        }
     }
 
     public function checkAbaApproved(string $tranId): bool

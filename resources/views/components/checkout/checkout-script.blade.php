@@ -17,7 +17,122 @@
      ──────────────────────────────────────────────────────────────────*/
 
     /* Track grand total in JS so we can compute deltas client-side */
-    let _prevTotal = {{ $finalTotal ?? 0 }};
+    let _prevTotal = {{ $finalTotal ?? ($discountedTotal ?? ($total ?? 0)) }};
+
+    /*──────────────────────────────────────────────────────────────────
+     |  VOUCHER SYSTEM
+     ──────────────────────────────────────────────────────────────────*/
+    // product_ids no longer sent — server reads cart from session directly
+
+    function applyVoucher() {
+        const codeEl = document.getElementById('voucher-input');
+        const errEl = document.getElementById('voucher-error');
+        const applyBtn = document.getElementById('voucher-apply-btn');
+        const code = codeEl.value.trim().toUpperCase();
+
+        if (!code) {
+            errEl.textContent = 'Please enter a voucher code.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        errEl.classList.add('hidden');
+        applyBtn.disabled = true;
+        applyBtn.textContent = '…';
+
+        fetch('{{ route('voucher.apply') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    code
+                }),
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    errEl.textContent = data.message || 'Invalid voucher code.';
+                    errEl.classList.remove('hidden');
+                    applyBtn.disabled = false;
+                    applyBtn.textContent = 'Apply';
+                    return;
+                }
+
+                // Show applied badge, hide input row
+                document.getElementById('voucher-input-row').style.display = 'none';
+                document.getElementById('voucher-applied-row').style.display = 'flex';
+                document.getElementById('applied-code-label').textContent = data.voucher_code;
+
+                // Show discount row
+                const discountRow = document.getElementById('discount-row');
+                const discountDisplay = document.getElementById('discount-display');
+                discountRow.style.display = 'flex';
+                discountDisplay.textContent = '-$' + data.discount_amount.toFixed(2) + ' USD';
+
+                // Update grand total odometer
+                const direction = data.final_total < _prevTotal ? 'down' : 'up';
+                _fireGrandEvent(data.final_total, direction);
+                _prevTotal = data.final_total;
+
+                showToast('🎉 ' + data.message, 'success');
+            })
+            .catch(() => {
+                errEl.textContent = 'A network error occurred. Please try again.';
+                errEl.classList.remove('hidden');
+                applyBtn.disabled = false;
+                applyBtn.textContent = 'Apply';
+            });
+    }
+
+    function removeVoucher() {
+        fetch('{{ route('voucher.remove') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+            })
+            .then(async res => {
+                const data = await res.json();
+
+                // Reset UI
+                document.getElementById('voucher-input-row').style.display = 'flex';
+                document.getElementById('voucher-applied-row').style.display = 'none';
+                document.getElementById('voucher-input').value = '';
+
+                // Hide discount row
+                document.getElementById('discount-row').style.display = 'none';
+                document.getElementById('discount-display').textContent = '-$0.00 USD';
+
+                // Restore grand total odometer
+                const direction = data.final_total > _prevTotal ? 'up' : 'down';
+                _fireGrandEvent(data.final_total, direction);
+                _prevTotal = data.final_total;
+
+                showToast('Voucher removed.', 'warning');
+            })
+            .catch(() => showToast('Could not remove voucher. Please try again.', 'error'));
+    }
+
+    // Allow pressing Enter in the voucher input
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('voucher-input');
+        if (input) {
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyVoucher();
+                }
+            });
+            input.addEventListener('input', () => {
+                input.value = input.value.toUpperCase();
+            });
+        }
+    });
 
     /* ── button state ── */
     function syncButtonStates(productId) {

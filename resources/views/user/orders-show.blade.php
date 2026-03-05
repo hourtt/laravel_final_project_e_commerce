@@ -5,11 +5,15 @@
         <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
                 <a href="{{ route('user.orders') }}"
-                    class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400 hover:text-blue-600 transition-colors mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                        stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                    </svg>
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors mb-2 group">
+                    <span
+                        class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                            viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </span>
                     My Orders
                 </a>
                 <h1 class="text-2xl font-extrabold text-gray-900">
@@ -111,12 +115,32 @@
                         @endforeach
                     </ul>
 
-                    {{-- Total row — computed from actual items, not stored total_price --}}
-                    @php $computedTotal = $order->items->sum(fn($i) => $i->quantity * $i->price); @endphp
-                    <div class="flex justify-between items-center px-5 py-4 bg-slate-50 border-t border-gray-100">
-                        <span class="text-sm font-bold text-gray-700">Order Total</span>
-                        <span
-                            class="text-xl font-extrabold text-gray-900">${{ number_format($computedTotal, 2) }}</span>
+                    {{-- Total footer: shows subtotal, discount row (if any), and final order total --}}
+                    @php
+                        $itemsSubtotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                        $discountAmount = $itemsSubtotal - $order->total_price;
+                        $hasDiscount = $discountAmount > 0.001; // float tolerance
+                    @endphp
+                    <div class="border-t border-gray-100">
+                        {{-- Subtotal row (only shown when a discount exists) --}}
+                        @if ($hasDiscount)
+                            <div class="flex justify-between items-center px-5 py-3 text-sm text-gray-500">
+                                <span>Subtotal</span>
+                                <span class="font-semibold">${{ number_format($itemsSubtotal, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center px-5 py-3 text-sm text-emerald-600">
+                                <span class="flex items-center gap-1.5 font-semibold">
+                                    🏷️ Voucher Discount
+                                </span>
+                                <span class="font-bold">-${{ number_format($discountAmount, 2) }}</span>
+                            </div>
+                        @endif
+                        {{-- Final total — always from orders.total_price --}}
+                        <div class="flex justify-between items-center px-5 py-4 bg-slate-50 border-t border-gray-100">
+                            <span class="text-sm font-bold text-gray-700">Order Total</span>
+                            <span
+                                class="text-xl font-extrabold text-gray-900">${{ number_format($order->total_price, 2) }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -146,21 +170,37 @@
                             <span>Status</span>
                             <span class="font-bold {{ $s['text'] }}">{{ $s['label'] }}</span>
                         </div>
-                        <div class="pt-3 border-t border-gray-100 flex justify-between">
-                            <span class="font-bold text-gray-900">Total</span>
-                            <span
-                                class="font-extrabold text-gray-900 text-base">${{ number_format($computedTotal, 2) }}</span>
+                        <div class="pt-3 border-t border-gray-100 space-y-2">
+                            @if ($hasDiscount)
+                                <div class="flex justify-between text-sm text-gray-500">
+                                    <span>Subtotal</span>
+                                    <span class="font-semibold">${{ number_format($itemsSubtotal, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm text-emerald-600">
+                                    <span class="font-semibold">🏷️ Voucher</span>
+                                    <span class="font-bold">-${{ number_format($discountAmount, 2) }}</span>
+                                </div>
+                            @endif
+                            <div class="flex justify-between pt-2 border-t border-gray-100">
+                                <span class="font-bold text-gray-900">Total</span>
+                                <span
+                                    class="font-extrabold text-gray-900 text-base">${{ number_format($order->total_price, 2) }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {{-- Back to orders --}}
-                <a href="{{ route('checkout') }}"
-                    class="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                        stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                    </svg>
+                <a href="{{ route('user.orders') }}"
+                    class="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors group">
+                    <span
+                        class="w-6 h-6 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="w-3.5 h-3.5 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                            viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </span>
                     Back to My Orders
                 </a>
 

@@ -8,6 +8,8 @@ use App\Http\Controllers\User\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
+use App\Http\Controllers\User\VoucherController as UserVoucherController;
 
 // Public home
 Route::get('/', [UserController::class, 'index'])->name('home');
@@ -33,6 +35,10 @@ Route::middleware(['auth'])->group(function () {
     // User order history
     Route::get('/orders', [UserController::class, 'orders'])->name('user.orders');
     Route::get('/orders/{id}', [UserController::class, 'orderShow'])->name('user.orders.show');
+
+    // Voucher (AJAX)
+    Route::post('/voucher/apply', [UserVoucherController::class, 'apply'])->name('voucher.apply');
+    Route::post('/voucher/remove', [UserVoucherController::class, 'remove'])->name('voucher.remove');
 });
 
 // Since Pushback is a Webhook sent by ABA servers, it doesn't need 'auth' middleware
@@ -45,6 +51,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('products', ProductController::class);
     Route::resource('users', AdminUserController::class);
     Route::resource('orders', OrderController::class);
+    Route::resource('vouchers', AdminVoucherController::class);
+    Route::get('/vouchers-generate-code', [AdminVoucherController::class, 'generateCode'])->name('vouchers.generate-code');
 });
 
 Route::middleware('auth')->group(function () {

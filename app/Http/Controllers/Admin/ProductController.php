@@ -10,10 +10,24 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('category')->latest()->get();
-        return view('admin.products.index', compact('products'));
+        $search   = trim($request->input('search', ''));
+        $searchBy = $request->input('search_by', 'name'); // 'name' | 'category'
+
+        $products = Product::with('category')
+            ->when($search !== '', function ($q) use ($search, $searchBy) {
+                if ($searchBy === 'category') {
+                    // Filter by category name only
+                    $q->whereHas('category', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+                } else {
+                    // Filter by product name only (default)
+                    $q->where('name', 'like', "%{$search}%");
+                }
+            })
+            ->latest()
+            ->get();
+        return view('admin.products.index', compact('products', 'search', 'searchBy'));
     }
 
     public function create()

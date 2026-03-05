@@ -28,7 +28,7 @@
                 <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">All
                     Products</span>
             </div>
-            <p class="text-3xl font-extrabold text-gray-900">{{ $totalProducts }}</p>
+            <p class="text-3xl font-stat text-gray-900">{{ $totalProducts }}</p>
             <p class="text-gray-500 text-sm mt-1">Total Products Listed</p>
         </div>
 
@@ -47,7 +47,7 @@
                 <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">In
                     Stock</span>
             </div>
-            <p class="text-3xl font-extrabold text-gray-900">{{ number_format($totalStock) }}</p>
+            <p class="text-3xl font-stat text-gray-900">{{ number_format($totalStock) }}</p>
             <p class="text-gray-500 text-sm mt-1">Total Items in Stock</p>
         </div>
 
@@ -67,8 +67,8 @@
                 <span
                     class="text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Average</span>
             </div>
-            <p class="text-3xl font-extrabold text-gray-900">${{ number_format($avgPrice, 2) }}</p>
-            <p class="text-gray-500 text-sm mt-1">Average Product Price</p>
+            <p class="text-3xl font-stat text-gray-900">${{ number_format($avgPrice, 2) }}</p>
+            <p class="text-gray-00 text-sm mt-1">Average Product Price</p>
         </div>
 
         <!-- Categories count -->
@@ -84,7 +84,7 @@
                 <span
                     class="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">Active</span>
             </div>
-            <p class="text-3xl font-extrabold text-gray-900">{{ $categories }}</p>
+            <p class="text-3xl font-stat text-gray-900">{{ $categories }}</p>
             <p class="text-gray-500 text-sm mt-1">Product Categories</p>
         </div>
     </div>
@@ -160,7 +160,7 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3.5">
-                                    <p class="font-bold text-gray-900">${{ number_format($product->price, 2) }}</p>
+                                    <p class="text-gray-900">${{ number_format($product->price, 2) }}</p>
                                 </td>
                                 <td class="px-4 py-3.5">
                                     @if ($product->stock <= 0)

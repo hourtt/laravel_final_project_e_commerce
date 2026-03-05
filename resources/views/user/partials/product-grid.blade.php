@@ -125,7 +125,7 @@
                             x-text="open ? 'See Less' : 'See More'"></button>
                     </div>
                     <div class="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-                        <p class="text-base font-extrabold text-gray-900">${{ number_format($product->price, 2) }}</p>
+                        <p class="text-base font-notosan text-gray-900">${{ number_format($product->price, 2) }}</p>
                         <span class="text-[10px] text-gray-400 font-medium">Stock:
                             {{ $product->stock ?? 'N/A' }}</span>
                     </div>

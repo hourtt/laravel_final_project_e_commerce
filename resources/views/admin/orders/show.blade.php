@@ -1,4 +1,21 @@
 <x-admin-layout>
+
+    {{-- Back navigation --}}
+    <div class="mb-5">
+        <a href="{{ route('admin.orders.index') }}"
+            class="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors group">
+            <span
+                class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                    viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+            </span>
+            Orders
+        </a>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -34,10 +51,48 @@
                         </li>
                     @endforeach
                 </ul>
-                <div
-                    class="px-6 py-4 bg-slate-50 border-t border-gray-100 flex justify-between items-center font-bold text-gray-900">
-                    <span>Total Amount</span>
-                    <span class="text-lg">${{ number_format($order->total_price, 2) }}</span>
+                <div class="border-t border-gray-100">
+                    @php
+                        $itemsSubtotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+
+                        // Use the stored voucher_discount if available (orders created after migration).
+                        // Fall back to calculating the difference for older orders where the column is null.
+                        $voucherCode = $order->voucher_code;
+                        $voucherDiscount =
+                            $order->voucher_discount ??
+                            ($itemsSubtotal - $order->total_price > 0.01 ? $itemsSubtotal - $order->total_price : null);
+                        $hasDiscount = $voucherDiscount !== null && $voucherDiscount > 0;
+                    @endphp
+
+                    {{-- Subtotal + voucher rows — only shown when a discount was applied --}}
+                    @if ($hasDiscount)
+                        <div class="flex justify-between items-center px-6 py-3 text-sm text-gray-500">
+                            <span>Subtotal</span>
+                            <span class="font-semibold">${{ number_format($itemsSubtotal, 2) }}</span>
+                        </div>
+
+                        {{-- Voucher discount row --}}
+                        <div
+                            class="flex justify-between items-center px-6 py-3 bg-emerald-50 border-y border-emerald-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold text-emerald-700">🏷️ Voucher Discount</span>
+                                @if ($voucherCode)
+                                    <span
+                                        class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wide font-mono">
+                                        {{ $voucherCode }}
+                                    </span>
+                                @endif
+                            </div>
+                            <span
+                                class="text-sm font-bold text-emerald-700">-${{ number_format($voucherDiscount, 2) }}</span>
+                        </div>
+                    @endif
+
+                    {{-- Final total — always from orders.total_price --}}
+                    <div class="px-6 py-4 bg-slate-50 flex justify-between items-center font-bold text-gray-900">
+                        <span>Total Amount</span>
+                        <span class="text-lg">${{ number_format($order->total_price, 2) }}</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -8,12 +8,16 @@
                 <p class="text-sm text-gray-400 mt-1">View your complete purchase history</p>
             </div>
             <a href="{{ route('home') }}"
-                class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-                Back to Shop
+                class="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors group">
+                <span
+                    class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                        viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                </span>
+                Shop
             </a>
         </div>
 
@@ -76,15 +80,26 @@
                         </div>
 
                         {{-- Right: Status + Total + Arrow --}}
-                        @php $computedTotal = $order->items->sum(fn($i) => $i->quantity * $i->price); @endphp
+                        @php
+                            $itemsSubtotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                            $hasDiscount = $order->total_price < $itemsSubtotal - 0.001; // float tolerance
+                        @endphp
                         <div class="flex items-center gap-4 sm:shrink-0">
                             <span
                                 class="px-3 py-1 rounded-full text-[11px] font-bold uppercase {{ $s['bg'] }} {{ $s['text'] }}">
                                 {{ $s['label'] }}
                             </span>
-                            <p class="text-base font-extrabold text-gray-900 min-w-[80px] text-right">
-                                ${{ number_format($computedTotal, 2) }}
-                            </p>
+                            <div class="text-right">
+                                <p class="text-base font-extrabold text-gray-900 min-w-[80px]">
+                                    ${{ number_format($order->total_price, 2) }}
+                                </p>
+                                @if ($hasDiscount)
+                                    <p
+                                        class="text-[10px] font-semibold text-emerald-600 flex items-center justify-end gap-0.5 mt-0.5">
+                                        🏷️ Voucher applied
+                                    </p>
+                                @endif
+                            </div>
                             <svg xmlns="http://www.w3.org/2000/svg"
                                 class="w-4 h-4 text-gray-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all"
                                 fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">

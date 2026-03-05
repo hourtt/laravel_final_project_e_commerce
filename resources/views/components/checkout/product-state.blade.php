@@ -120,8 +120,9 @@
                 ═══════════════════════════════════════ --}}
      @php
          $delivery = 0.0;
-         $discount = 0.0;
-         $finalTotal = $total + $delivery - $discount;
+         $voucherDiscount = $voucherDiscount ?? 0.0;
+         $voucherCode = $voucherCode ?? null;
+         $finalTotal = $discountedTotal ?? $total - $voucherDiscount;
      @endphp
 
      <div class="lg:col-span-1">
@@ -129,13 +130,39 @@
              <h2 class="text-sm font-bold text-gray-900 mb-5 tracking-wide uppercase">Order Summary</h2>
 
              {{-- Voucher --}}
-             <div class="flex items-center gap-2 mb-6">
-                 <input type="text" id="voucher-input" placeholder="Discount voucher"
-                     class="voucher-input flex-1 h-10 px-4 rounded-xl border border-gray-200 text-sm focus:border-gray-400 focus:ring-0 outline-none transition-colors">
-                 <button type="button"
-                     class="h-10 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-semibold text-gray-700 transition-colors whitespace-nowrap">
-                     Apply
-                 </button>
+             <div class="mb-6" id="voucher-section">
+                 {{-- Input row (hidden when a voucher is applied) --}}
+                 <div class="flex items-center gap-2" id="voucher-input-row"
+                     style="{{ $voucherCode ? 'display:none' : '' }}">
+                     <input type="text" id="voucher-input" placeholder="Discount voucher" value=""
+                         class="voucher-input flex-1 h-10 px-4 rounded-xl border border-gray-200 text-sm focus:border-gray-400 focus:ring-0 outline-none transition-colors font-mono uppercase tracking-widest">
+                     <button type="button" id="voucher-apply-btn" onclick="applyVoucher()"
+                         class="h-10 px-4 rounded-xl bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold transition-colors whitespace-nowrap">
+                         Apply
+                     </button>
+                 </div>
+
+                 {{-- Applied voucher badge (visible when active) --}}
+                 <div id="voucher-applied-row"
+                     class="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200"
+                     style="{{ $voucherCode ? '' : 'display:none' }}">
+                     <div class="flex items-center gap-2">
+                         <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                             <path fill-rule="evenodd"
+                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                 clip-rule="evenodd" />
+                         </svg>
+                         <span class="text-xs font-bold text-emerald-700 font-mono tracking-widest"
+                             id="applied-code-label">{{ $voucherCode ?? '' }}</span>
+                     </div>
+                     <button type="button" onclick="removeVoucher()"
+                         class="text-xs text-gray-400 hover:text-red-500 font-semibold transition-colors">
+                         Remove
+                     </button>
+                 </div>
+
+                 {{-- Error message --}}
+                 <p id="voucher-error" class="mt-1.5 text-xs text-red-500 hidden"></p>
              </div>
 
              {{-- Breakdown --}}
@@ -147,15 +174,17 @@
                          ${{ number_format($total, 2) }} USD
                      </span>
                  </div>
-                 <div class="flex items-center justify-between text-gray-500">
+                 {{-- Discount row: shown only when voucher is active --}}
+                 <div class="flex items-center justify-between text-gray-500" id="discount-row"
+                     style="{{ $voucherDiscount > 0 ? '' : 'display:none' }}">
                      <span>Discount</span>
-                     <span class="font-semibold text-gray-800">-${{ number_format($discount, 2) }} USD</span>
+                     <span id="discount-display" class="font-semibold text-emerald-600">
+                         -${{ number_format($voucherDiscount, 2) }} USD
+                     </span>
                  </div>
                  <div class="flex items-center justify-between text-gray-500">
                      <span>Delivery fee</span>
-                     <span class="font-semibold text-gray-800">
-                         {{ $delivery == 0 ? 'Free' : '$' . number_format($delivery, 2) . ' USD' }}
-                     </span>
+                     <span class="font-semibold text-gray-800">Free</span>
                  </div>
              </div>
 
