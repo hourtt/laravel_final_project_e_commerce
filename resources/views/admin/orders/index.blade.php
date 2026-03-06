@@ -24,20 +24,20 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-sm table-fixed min-w-[800px]">
                 <thead>
                     <tr class="bg-slate-50 border-b border-gray-100">
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                        <th class="w-[15%] text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Order ID</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="w-[15%] text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Customer</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="w-[15%] text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Total ($)</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="w-[15%] text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Status</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="w-[15%] text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Date</th>
-                        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                        <th class="w-[15%] text-right text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Actions</th>
                     </tr>
                 </thead>
@@ -54,15 +54,15 @@
                         <!-- Orders for this Date -->
                         @foreach ($ordersGroup as $order)
                             <tr class="hover:bg-slate-50/50 transition-colors">
-                                <td class="px-6 py-3.5 font-bold text-gray-800">
+                                <td class="px-6 py-3.5 text-center font-bold text-gray-800">
                                     #{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3.5 text-gray-600 truncate max-w-[150px]">
+                                <td class="px-4 py-3.5 text-center text-gray-600 truncate">
                                     {{ $order->user->name ?? 'Unknown' }}</td>
-                                <td class="px-4 py-3.5 font-bold text-gray-900">
+                                <td class="px-4 py-3.5 text-center font-bold text-gray-900">
                                     ${{ number_format($order->total_price, 2) }}
                                 </td>
-                                <td class="px-4 py-3.5">
+                                <td class="px-4 py-3.5 text-center">
                                     @if (strtolower($order->status) === 'pending')
                                         <span
                                             class="text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">Pending</span>
@@ -80,7 +80,8 @@
                                             class="text-red-600 bg-red-50 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">Cancelled</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3.5 text-gray-500 text-xs">{{ $order->created_at->format('M d, Y') }}
+                                <td class="px-4 py-3.5 text-center text-gray-500 text-xs">
+                                    {{ $order->created_at->format('M d, Y') }}
                                 </td>
                                 <td class="px-6 py-3.5 text-right">
                                     <div class="flex items-center justify-end gap-2">

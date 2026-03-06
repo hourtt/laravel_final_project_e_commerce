@@ -97,17 +97,17 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b border-gray-100">
-                        <th class="text-left text-xs font-semibold text-gray-500 tracking-wider px-6 py-3 w-16">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3 w-16">
                             Image</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Product Name</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Category</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Price</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Stock</th>
-                        <th class="text-right text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Actions</th>
                     </tr>
                 </thead>
@@ -117,24 +117,26 @@
 
                             {{-- Thumbnail --}}
                             <td class="px-6 py-3">
-                                @if ($product->image_url)
-                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
-                                        class="w-11 h-11 object-contain">
-                                @else
-                                    <div
-                                        class="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20"
-                                            fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                @endif
+                                <div class="flex items-center justify-center">
+                                    @if ($product->image_url)
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                            class="w-11 h-11 object-contain">
+                                    @else
+                                        <div
+                                            class="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20"
+                                                fill="currentColor">
+                                                <path fill-rule="evenodd"
+                                                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    @endif
+                                </div>
                             </td>
 
                             {{-- Name + description snippet --}}
-                            <td class="px-4 py-3 max-w-xs align-top">
+                            <td class="px-4 py-3 max-w-xs align-top text-left">
                                 <p class="font-semibold text-gray-800 leading-tight mt-2">{{ $product->name }}</p>
                                 <div x-data="{ open: false, uid: {{ $product->id }} }"
                                     @close-descs.window="if ($event.detail.except !== uid) open = false"
@@ -150,7 +152,7 @@
                                     @if (strlen($product->description) > 60)
                                         <button type="button"
                                             @click.stop="open = !open; if (open) $dispatch('close-descs', { except: uid })"
-                                            class="inline-flex items-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-700 font-semibold mt-1 focus:outline-none transition-colors duration-150 relative z-10 w-full bg-white/50 backdrop-blur-sm -top-1 pt-1 rounded">
+                                            class="inline-flex items-center justify-center gap-0.5 text-[10px] text-blue-500 hover:text-blue-700 font-semibold mt-1 focus:outline-none transition-colors duration-150 relative z-10 w-full bg-white/50 backdrop-blur-sm -top-1 pt-1 rounded">
                                             <span x-text="open ? 'See Less' : 'See More'">See More</span>
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="w-3 h-3 transition-transform duration-300"
@@ -166,32 +168,32 @@
                             </td>
 
                             {{-- Category --}}
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-center">
                                 <span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-semibold">
                                     {{ $product->category->name ?? 'Uncategorized' }}
                                 </span>
                             </td>
 
                             {{-- Price --}}
-                            <td class="px-4 py-3 text-gray-900">${{ number_format($product->price, 2) }}
+                            <td class="px-4 py-3 text-center text-gray-900">${{ number_format($product->price, 2) }}
                             </td>
 
                             {{-- Stock --}}
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-center border-l-0 text-gray-900">
                                 @if ($product->stock <= 0)
                                     <span
-                                        class="inline-flex items-center gap-1 text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                        class="inline-flex items-center justify-center gap-1 text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs font-semibold">
                                         <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Out of Stock
                                     </span>
                                 @elseif($product->stock <= 5)
                                     <span
-                                        class="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                        class="inline-flex items-center justify-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs font-semibold">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Low
                                         ({{ $product->stock }})
                                     </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                        class="inline-flex items-center justify-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs font-semibold">
                                         <span
                                             class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{{ $product->stock }}
                                         items
@@ -200,8 +202,8 @@
                             </td>
 
                             {{-- Actions --}}
-                            <td class="px-6 py-3 text-right">
-                                <div class="flex items-center justify-end gap-2">
+                            <td class="px-6 py-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.products.edit', $product) }}"
                                         class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
                                         title="Edit">

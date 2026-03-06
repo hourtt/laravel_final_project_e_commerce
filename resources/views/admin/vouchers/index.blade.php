@@ -36,19 +36,19 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b border-gray-100">
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Code</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Discount</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Product Scope</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Usage</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Expires</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Status</th>
-                        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Actions</th>
                     </tr>
                 </thead>
@@ -56,10 +56,10 @@
                     @forelse ($vouchers as $voucher)
                         <tr class="hover:bg-slate-50/50 transition-colors">
                             {{-- Code --}}
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
+                            <td class="px-5 py-4 text-center">
+                                <div class="flex items-center gap-2 justify-center">
                                     <span
-                                        class="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono text-xs font-bold tracking-widest">
+                                        class="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono text-center text-xs font-bold tracking-widest">
                                         {{ $voucher->code }}
                                     </span>
                                     {{-- Hidden input — holds the code for synchronous copy --}}
@@ -80,16 +80,16 @@
                             </td>
 
                             {{-- Discount --}}
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 text-center">
                                 @if ($voucher->discount_type === 'percentage')
                                     <span
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                                        class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                         {{ $voucher->discount_value }}% OFF
                                     </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                                        class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                         ${{ number_format($voucher->discount_value, 2) }} OFF
                                     </span>
@@ -97,7 +97,7 @@
                             </td>
 
                             {{-- Product Scope --}}
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 text-center">
                                 @if ($voucher->product)
                                     <span class="text-xs text-gray-700 font-medium">{{ $voucher->product->name }}</span>
                                 @else
@@ -106,7 +106,7 @@
                             </td>
 
                             {{-- Usage --}}
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 text-center">
                                 <span class="text-xs text-gray-700 font-semibold tabular-nums">
                                     {{ $voucher->used_count }}
                                     @if ($voucher->usage_limit !== null)
@@ -116,7 +116,7 @@
                                     @endif
                                 </span>
                                 @if ($voucher->usage_limit !== null)
-                                    <div class="mt-1 h-1 w-20 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="mt-1 h-1 w-20 bg-gray-100 rounded-full overflow-hidden mx-auto">
                                         <div class="h-full bg-blue-400 rounded-full"
                                             style="width: {{ $voucher->usage_limit > 0 ? min(100, round(($voucher->used_count / $voucher->usage_limit) * 100)) : 0 }}%">
                                         </div>
@@ -125,7 +125,7 @@
                             </td>
 
                             {{-- Expires --}}
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 text-center">
                                 @if ($voucher->expires_at)
                                     @if ($voucher->expires_at->isPast())
                                         <span class="text-xs text-red-500 font-semibold">
@@ -145,23 +145,23 @@
                             </td>
 
                             {{-- Status --}}
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 text-center">
                                 @if ($voucher->status)
                                     <span
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600">
+                                        class="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
                                     </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500">
+                                        class="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500">
                                         <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Inactive
                                     </span>
                                 @endif
                             </td>
 
                             {{-- Actions --}}
-                            <td class="px-6 py-4 text-right">
-                                <div class="flex items-center justify-end gap-2">
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.vouchers.edit', $voucher->id) }}"
                                         class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
                                         title="Edit">

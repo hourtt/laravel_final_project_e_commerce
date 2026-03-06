@@ -14,26 +14,26 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b border-gray-100">
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Name</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Email</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Role</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Status</th>
-                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                             Joined</th>
-                        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                        <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                             Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     @forelse($users as $user)
                         <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-3.5 font-semibold text-gray-800">{{ $user->name }}</td>
-                            <td class="px-4 py-3.5 text-gray-600">{{ $user->email }}</td>
-                            <td class="px-4 py-3.5">
+                            <td class="px-6 py-3.5 text-center font-semibold text-gray-800">{{ $user->name }}</td>
+                            <td class="px-4 py-3.5 text-center text-gray-600">{{ $user->email }}</td>
+                            <td class="px-4 py-3.5 text-center">
                                 @if ($user->role === 'admin')
                                     <span
                                         class="text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Admin</span>
@@ -42,7 +42,7 @@
                                         class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">User</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3.5">
+                            <td class="px-4 py-3.5 text-center">
                                 @if ($user->is_active)
                                     <span
                                         class="text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Active</span>
@@ -51,9 +51,10 @@
                                         class="text-red-600 bg-red-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Disabled</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3.5 text-gray-500 text-xs">{{ $user->created_at->format('M d, Y') }}</td>
-                            <td class="px-6 py-3.5 text-right">
-                                <div class="flex items-center justify-end gap-2">
+                            <td class="px-4 py-3.5 text-center text-gray-500 text-xs">
+                                {{ $user->created_at->format('M d, Y') }}</td>
+                            <td class="px-6 py-3.5 text-center">
+                                <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.users.edit', $user) }}"
                                         class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
                                         title="Edit">
