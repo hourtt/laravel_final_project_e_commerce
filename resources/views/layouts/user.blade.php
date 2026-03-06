@@ -105,11 +105,6 @@
         <main class="flex-1">
             {{ $slot }}
         </main>
-
-        {{-- Footer --}}
-        <footer class="mt-auto bg-gray-950 text-gray-400 text-sm py-8 px-4 text-center">
-            <p>© {{ date('Y') }} VoltMart. All rights reserved.</p>
-        </footer>
     </div>
 
     {{-- ======================================================= --}}
