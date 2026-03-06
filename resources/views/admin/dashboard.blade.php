@@ -93,12 +93,12 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         <!-- ============ PRODUCT TABLE (LEFT, 2/3) ============ -->
-        <div class="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div id="recent-products"
+            class="scroll-mt-6 xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
                     <h2 class="text-base font-bold text-gray-900">Recent Products</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">Latest {{ $recentProducts->count() }} products in the store
-                    </p>
+                    <p class="text-xs text-gray-400 mt-0.5">Latest products in the store</p>
                 </div>
                 <a href="{{ route('admin.products.create') }}"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/30">
@@ -115,20 +115,15 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-slate-50 border-b border-gray-100">
-                            <th
-                                class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                            <th class="text-left text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                                 Product</th>
-                            <th
-                                class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                            <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                                 Category</th>
-                            <th
-                                class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                            <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                                 Price</th>
-                            <th
-                                class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
+                            <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-4 py-3">
                                 Stock</th>
-                            <th
-                                class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                            <th class="text-center text-xs font-semibold text-gray-500 tracking-wider px-6 py-3">
                                 Actions</th>
                         </tr>
                     </thead>
@@ -138,52 +133,54 @@
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-9 h-9 {{ $clr['bg'] }} rounded-lg flex items-center justify-center text-lg flex-shrink-0">
-                                            {{ $clr['icon'] }}
-                                        </div>
+                                        @if ($product->image_url)
+                                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                                class="w-10 h-10 object-contain rounded-lg flex-shrink-0 bg-gray-50 p-1 border border-gray-100">
+                                        @else
+                                            <div
+                                                class="w-10 h-10 {{ $clr['bg'] }} rounded-lg flex items-center justify-center text-lg flex-shrink-0">
+                                                {{ $clr['icon'] }}
+                                            </div>
+                                        @endif
                                         <div>
                                             <p class="font-semibold text-gray-800 text-sm leading-tight">
                                                 {{ $product->name }}
                                             </p>
-                                            <p class="text-[11px] text-gray-400 line-clamp-1">
-                                                {{ $product->description }}
-                                            </p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5">
+                                <td class="px-4 py-3.5 text-center">
                                     <span
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $clr['bg'] }} {{ $clr['text'] }}">
+                                        class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $clr['bg'] }} {{ $clr['text'] }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $clr['dot'] }}"></span>
                                         {{ $product->category->name ?? 'None' }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3.5">
+                                <td class="px-4 py-3.5 text-center">
                                     <p class="text-gray-900">${{ number_format($product->price, 2) }}</p>
                                 </td>
-                                <td class="px-4 py-3.5">
+                                <td class="px-4 py-3.5 text-center">
                                     @if ($product->stock <= 0)
                                         <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600">
+                                            class="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600">
                                             <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Out
                                         </span>
                                     @elseif($product->stock <= 5)
                                         <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600">
+                                            class="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600">
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Low
                                             ({{ $product->stock }})
                                         </span>
                                     @else
                                         <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600">
+                                            class="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             {{ $product->stock }}
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-3.5 text-right">
-                                    <div class="flex items-center justify-end gap-2">
+                                <td class="px-6 py-3.5 text-center">
+                                    <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('admin.products.edit', $product->id) }}"
                                             class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
                                             title="Edit">
@@ -193,16 +190,22 @@
                                                     d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                             </svg>
                                         </a>
-                                        <a href="{{ route('admin.products.destroy', $product->id) }}"
-                                            class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"
-                                            title="Delete">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5"
-                                                viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd"
-                                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                                    clip-rule="evenodd" />
-                                            </svg>
-                                        </a>
+                                        <form action="{{ route('admin.products.destroy', $product->id) }}"
+                                            method="POST" class="inline"
+                                            onsubmit="return confirm('Are you sure you want to delete {{ addslashes($product->name) }}?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"
+                                                title="Delete">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -219,13 +222,16 @@
                 </table>
             </div>
 
-            <div class="px-6 py-3 bg-slate-50 border-t border-gray-100 flex items-center justify-between">
-                <p class="text-xs text-gray-400">Showing {{ $recentProducts->count() }} of {{ $totalProducts }}
-                    products
-                </p>
-                <a href="{{ route('admin.products.index') }}"
-                    class="text-xs font-semibold text-blue-600 hover:underline">View All Products →</a>
-            </div>
+            {{-- Pagination --}}
+            @if ($recentProducts->hasPages())
+                <div class="px-6 py-4 border-t border-gray-100 bg-white" x-data="{ show: false }"
+                    x-init="setTimeout(() => show = true, 100)">
+                    <div class="transition-all duration-500 ease-out transform"
+                        :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                        {{ $recentProducts->links() }}
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- ============ CATEGORY BREAKDOWN (RIGHT, 1/3) ============ -->

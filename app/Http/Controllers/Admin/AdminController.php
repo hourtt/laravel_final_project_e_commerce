@@ -16,7 +16,7 @@ class AdminController extends Controller
         $totalStock     = Product::sum('stock');
         $avgPrice       = Product::avg('price');
         $categories     = \App\Models\Category::count();
-        $recentProducts = Product::with('category')->latest()->take(8)->get();
+        $recentProducts = Product::with('category')->latest()->paginate(8)->withQueryString()->fragment('recent-products');
         $categoryStats  = \App\Models\Category::withCount('products')
                             ->withSum('products', 'stock')
                             ->get();
