@@ -63,21 +63,25 @@ class VoucherController extends Controller
             return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
         }
 
-        $subtotal = collect($cart)->sum(fn ($item) =>
-            (\App\Models\Product::find(array_key_first([$item])) ?? \App\Models\Product::find(0))?->price * ($item['quantity'] ?? 1) ?? 0
-        );
-
         // More reliable: recalculate from DB
         $productIds = array_keys($cart);
         $products   = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
         $subtotal   = 0;
+        $discountableSubtotal = 0;
+
         foreach ($cart as $productId => $cartItem) {
             if (isset($products[$productId])) {
-                $subtotal += $products[$productId]->price * $cartItem['quantity'];
+                $itemTotal = $products[$productId]->price * $cartItem['quantity'];
+                $subtotal += $itemTotal;
+                
+                // If the voucher is tied to a specific product, only that product's total is considered for the percentage discount.
+                if ($voucher->product_id === null || $voucher->product_id == $productId) {
+                    $discountableSubtotal += $itemTotal;
+                }
             }
         }
 
-        $discountAmount = $voucher->calculateDiscount($subtotal);
+        $discountAmount = $voucher->calculateDiscount($discountableSubtotal);
         $finalTotal     = max(0, $subtotal - $discountAmount);
 
         // Store in session so preparePayment() can read it
