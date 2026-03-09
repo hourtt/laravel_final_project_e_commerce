@@ -100,8 +100,21 @@
                                 {{-- Name + qty + unit price --}}
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-bold text-gray-800 truncate">
-                                        {{ $item->product->name ?? 'Deleted Product' }}
+                                        {{ $item->product_name ?? ($item->product->name ?? 'Deleted Product') }}
                                     </p>
+                                    @if ($item->voucher_code)
+                                        <div class="mt-1 flex items-center gap-1.5">
+                                            <span
+                                                class="px-2 py-0.5 rounded-md bg-emerald-100/50 text-emerald-600 border border-emerald-200 text-[10px] font-bold uppercase tracking-wide font-mono">
+                                                🏷️ {{ $item->voucher_code }}
+                                            </span>
+                                            @if ($item->voucher_discount > 0)
+                                                <span class="text-[11px] font-bold text-emerald-600">
+                                                    (-${{ number_format($item->voucher_discount, 2) }})
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
                                     <p class="text-xs text-gray-400 mt-0.5">
                                         Qty: {{ $item->quantity }} × ${{ number_format($item->price, 2) }}
                                     </p>
