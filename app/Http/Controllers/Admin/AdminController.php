@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-
+use \App\Models\Category;
 class AdminController extends Controller
 {
     /**
@@ -15,9 +15,9 @@ class AdminController extends Controller
         $totalProducts  = Product::count();
         $totalStock     = Product::sum('stock');
         $avgPrice       = Product::avg('price');
-        $categories     = \App\Models\Category::count();
+        $categories     = Category::count();
         $recentProducts = Product::with('category')->latest()->paginate(8)->withQueryString()->fragment('recent-products');
-        $categoryStats  = \App\Models\Category::withCount('products')
+        $categoryStats  = Category::withCount('products')
                             ->withSum('products', 'stock')
                             ->get();
 
