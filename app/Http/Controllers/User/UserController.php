@@ -8,7 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Voucher;
 
 class UserController extends Controller
 {
@@ -171,22 +171,43 @@ class UserController extends Controller
             $this->syncPendingOrder();
         }
 
-        // Recalculate totals
         $cartData = session()->get('cart', []);
         $productIds = array_keys($cartData);
         $products = Product::whereIn('id', $productIds)->get();
-        $grandTotal = 0;
+        $subtotal = 0;
+        $discountableSubtotal = 0;
         $rowSubtotal = 0;
+
+        $voucherCode = session('voucher_code');
+        $voucherProductId = null;
+        $voucher = null;
+
+        if ($voucherCode) {
+            $voucher = Voucher::where('code', $voucherCode)->first();
+            $voucherProductId = $voucher ? $voucher->product_id : null;
+        }
 
         foreach ($products as $p) {
             $qty = $cartData[$p->id]['quantity'];
             $lineTotal = $p->price * $qty;
-            $grandTotal += $lineTotal;
+            $subtotal += $lineTotal;
             
+            if ($voucher && ($voucherProductId === null || $voucherProductId === $p->id)) {
+                $discountableSubtotal += $lineTotal;
+            }
+
             if ($p->id == $productId) {
                 $rowSubtotal = $lineTotal;
             }
         }
+
+        $voucherDiscount = 0;
+        if ($voucher) {
+            $voucherDiscount = $voucher->calculateDiscount($discountableSubtotal);
+            session(['voucher_discount' => $voucherDiscount]); // update session with fresh discount
+        }
+
+        $grandTotal = max(0, $subtotal - $voucherDiscount);
 
         return response()->json([
             'success' => true,
@@ -270,16 +291,55 @@ class UserController extends Controller
 
         $products = Product::whereIn('id', array_keys($cart))->get();
         $total = 0;
+        $discountableSubtotal = 0;
         $cartProductIds = [];
+
+        $voucherCode = session('voucher_code');
+        $voucherProductId = null;
+        $voucher = null;
+
+        if ($voucherCode) {
+            $voucher = Voucher::where('code', $voucherCode)->first();
+            $voucherProductId = $voucher ? $voucher->product_id : null;
+        }
 
         foreach ($products as $product) {
             $qty = $cart[$product->id]['quantity'] ?? 1;
-            $total += $product->price * $qty;
+            $lineTotal = $product->price * $qty;
+            $total += $lineTotal;
             $cartProductIds[] = $product->id;
+
+            if ($voucher && ($voucherProductId === null || $voucherProductId === $product->id)) {
+                $discountableSubtotal += $lineTotal;
+            }
+        }
+
+        $voucherDiscount = 0;
+        if ($voucher) {
+            $voucherDiscount = $voucher->calculateDiscount($discountableSubtotal);
+            session(['voucher_discount' => $voucherDiscount]);
+        }
+
+        foreach ($products as $product) {
+            $qty = $cart[$product->id]['quantity'] ?? 1;
+
+            $itemVoucherCode = null;
+            $itemVoucherDiscount = null;
+            
+            if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
+                 $itemVoucherCode = $voucherCode;
+                 $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+            }
 
             OrderItem::updateOrCreate(
                 ['order_id' => $orderId, 'product_id' => $product->id],
-                ['quantity' => $qty, 'price' => $product->price]
+                [
+                    'product_name' => $product->name, 
+                    'voucher_code' => $itemVoucherCode,
+                    'voucher_discount' => $itemVoucherDiscount,
+                    'quantity' => $qty, 
+                    'price' => $product->price
+                ]
             );
         }
 
@@ -288,6 +348,10 @@ class UserController extends Controller
             ->whereNotIn('product_id', $cartProductIds)
             ->delete();
 
-        $order->update(['total_price' => $total]);
+        $discountedTotal = max(0, $total - $voucherDiscount);
+        $order->update([
+            'total_price' => $discountedTotal,
+            'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
+        ]);
     }
 }

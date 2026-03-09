@@ -98,12 +98,40 @@ class PaymentController extends Controller
                         ->whereNotIn('product_id', $cartProductIds)
                         ->delete();
 
+                    // Calculate which product gets the voucher discount
+                    $voucherProductId = null;
+                    if ($voucherCode) {
+                        $v = Voucher::where('code', $voucherCode)->first();
+                        // If it's a specific product, use that ID. Otherwise if it's a general voucher,
+                        // we can either apply it to everything or leave it null (meaning whole order). 
+                        // For clarity, we only mark order_items if the voucher is specifically tied to them.
+                        $voucherProductId = $v ? $v->product_id : null;
+                    }
+
                     // Add / update items that ARE in the cart
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
+                        
+                        $itemVoucherCode = null;
+                        $itemVoucherDiscount = null;
+                        
+                        // If the voucher is specifically for this product OR it's a general voucher
+                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
+                             $itemVoucherCode = $voucherCode;
+                             // Assign the full discount to the product line if specific, or proportional if general?
+                             // Simplest representation: show the discount amount on the item line where applicable.
+                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        }
+
                         OrderItem::updateOrCreate(
                             ['order_id' => $order->id, 'product_id' => $product->id],
-                            ['quantity' => $qty, 'price' => $product->price]
+                            [
+                                'product_name' => $product->name, 
+                                'voucher_code' => $itemVoucherCode,
+                                'voucher_discount' => $itemVoucherDiscount,
+                                'quantity' => $qty, 
+                                'price' => $product->price
+                            ]
                         );
                     }
 
@@ -126,13 +154,32 @@ class PaymentController extends Controller
                         'voucher_code'     => $voucherCode ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
+                    // Calculate which product gets the voucher discount
+                    $voucherProductId = null;
+                    if ($voucherCode) {
+                        $v = Voucher::where('code', $voucherCode)->first();
+                        $voucherProductId = $v ? $v->product_id : null;
+                    }
+
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
+                        
+                        $itemVoucherCode = null;
+                        $itemVoucherDiscount = null;
+                        
+                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
+                             $itemVoucherCode = $voucherCode;
+                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        }
+                        
                         OrderItem::create([
-                            'order_id'   => $order->id,
-                            'product_id' => $product->id,
-                            'quantity'   => $qty,
-                            'price'      => $product->price,
+                            'order_id'         => $order->id,
+                            'product_id'       => $product->id,
+                            'product_name'     => $product->name,
+                            'voucher_code'     => $itemVoucherCode,
+                            'voucher_discount' => $itemVoucherDiscount,
+                            'quantity'         => $qty,
+                            'price'            => $product->price,
                         ]);
                     }
                     DB::commit();
@@ -237,12 +284,34 @@ class PaymentController extends Controller
                         ->whereNotIn('product_id', $cartProductIds)
                         ->delete();
 
+                    // Calculate which product gets the voucher discount
+                    $voucherProductId = null;
+                    if ($voucherCode) {
+                        $v = Voucher::where('code', $voucherCode)->first();
+                        $voucherProductId = $v ? $v->product_id : null;
+                    }
+
                     // Upsert current cart items
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
+                        
+                        $itemVoucherCode = null;
+                        $itemVoucherDiscount = null;
+                        
+                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
+                             $itemVoucherCode = $voucherCode;
+                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        }
+                        
                         OrderItem::updateOrCreate(
                             ['order_id'   => $order->id, 'product_id' => $product->id],
-                            ['quantity'   => $qty,       'price'      => $product->price]
+                            [
+                                'product_name'     => $product->name, 
+                                'voucher_code'     => $itemVoucherCode,
+                                'voucher_discount' => $itemVoucherDiscount,
+                                'quantity'         => $qty,       
+                                'price'            => $product->price
+                            ]
                         );
                     }
 
@@ -264,13 +333,32 @@ class PaymentController extends Controller
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
 
+                    // Calculate which product gets the voucher discount
+                    $voucherProductId = null;
+                    if ($voucherCode) {
+                        $v = Voucher::where('code', $voucherCode)->first();
+                        $voucherProductId = $v ? $v->product_id : null;
+                    }
+
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
+                        
+                        $itemVoucherCode = null;
+                        $itemVoucherDiscount = null;
+                        
+                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
+                             $itemVoucherCode = $voucherCode;
+                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        }
+
                         OrderItem::create([
-                            'order_id'   => $order->id,
-                            'product_id' => $product->id,
-                            'quantity'   => $qty,
-                            'price'      => $product->price,
+                            'order_id'         => $order->id,
+                            'product_id'       => $product->id,
+                            'product_name'     => $product->name,
+                            'voucher_code'     => $itemVoucherCode,
+                            'voucher_discount' => $itemVoucherDiscount,
+                            'quantity'         => $qty,
+                            'price'            => $product->price,
                         ]);
                     }
 
