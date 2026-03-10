@@ -82,7 +82,14 @@ class VoucherController extends Controller
         }
 
         $discountAmount = $voucher->calculateDiscount($discountableSubtotal);
-        $finalTotal     = max(0, $subtotal - $discountAmount);
+        $finalTotal     = $subtotal - $discountAmount;
+
+        if ($finalTotal <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vouchers cannot be used to reduce the order total to $0.00.',
+            ], 422);
+        }
 
         // Store in session so preparePayment() can read it
         session([

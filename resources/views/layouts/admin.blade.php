@@ -14,6 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kaithi&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -187,8 +189,9 @@
         /* Profile avatar centering when collapsed */
         #admin-sidebar.collapsed .profile-row {
             justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            gap: 0;
         }
 
         /* ── Top-bar toggle button ── */
@@ -303,21 +306,21 @@
 
             <!-- Bottom: profile + logout -->
             <div class="px-3 py-4 border-t border-white/10 flex-shrink-0">
-                <div
-                    class="profile-row flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer mb-1">
+                <a href="{{ route('profile.edit') }}"
+                    class="profile-row flex items-center gap-3 px-3 py-2 rounded-xl w-full flexhover:bg-white/10 transition-colors mb-1">
                     <div
                         class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span
-                            class="text-white text-xs font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</span>
+                            class="text-white text-xs font-bold leading-none">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</span>
                     </div>
                     <div class="user-info flex-1 min-w-0 nav-label">
                         <p class="text-white text-sm font-semibold truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
                         <p class="text-slate-400 text-[10px] truncate">{{ auth()->user()->email ?? '' }}</p>
                     </div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
+                </a>
+                <form id="logout-form" method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit"
+                    <button type="button" onclick="confirmLogout(event)"
                         class="signout-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200 text-sm font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" viewBox="0 0 20 20"
                             fill="currentColor">
@@ -358,22 +361,6 @@
                             <h1 class="text-base font-bold text-gray-900">Admin Dashboard</h1>
                             <p class="text-xs text-gray-400">{{ now()->format('l, F j, Y | g:i A') }}</p>
                         </div>
-                    </div>
-
-                    <!-- RIGHT: Visit Store -->
-                    <div class="flex items-center gap-3">
-                        <a href="{{ route('home') }}" target="_blank"
-                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-50
-                                   text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path
-                                    d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                <path
-                                    d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                            </svg>
-                            View Store
-                        </a>
                     </div>
                 </div>
             </header>
@@ -480,6 +467,33 @@
                 localStorage.setItem(STORAGE_KEY, nowCollapsed);
             });
         })();
+
+        // ── Logout Confirmation – SweetAlert2 ──
+        function confirmLogout(event) {
+            Swal.fire({
+                title: 'Sign Out',
+                text: "Are you sure you want to sign out from the admin panel?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, Sign Out',
+                cancelButtonText: 'Cancel',
+                background: '#ffffff',
+                color: '#1e293b',
+                iconColor: '#f59e0b',
+                customClass: {
+                    title: 'text-xl font-bold',
+                    popup: 'rounded-2xl shadow-xl border border-gray-100',
+                    confirmButton: 'px-6 py-2.5 rounded-xl font-semibold transition-all',
+                    cancelButton: 'px-6 py-2.5 rounded-xl font-semibold transition-all'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        }
     </script>
 </body>
 

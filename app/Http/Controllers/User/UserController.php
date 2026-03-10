@@ -284,8 +284,8 @@ class UserController extends Controller
         $cart = session('cart', []);
 
         if (empty($cart)) {
-            OrderItem::where('order_id', $orderId)->delete();
-            $order->update(['total_price' => 0]);
+            $order->delete();
+            session()->forget('order_id');
             return;
         }
 
@@ -349,9 +349,15 @@ class UserController extends Controller
             ->delete();
 
         $discountedTotal = max(0, $total - $voucherDiscount);
-        $order->update([
-            'total_price' => $discountedTotal,
-            'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
-        ]);
+
+        if ($discountedTotal <= 0) {
+            $order->delete();
+            session()->forget('order_id');
+        } else {
+            $order->update([
+                'total_price' => $discountedTotal,
+                'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
+            ]);
+        }
     }
 }

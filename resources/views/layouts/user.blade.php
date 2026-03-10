@@ -13,6 +13,9 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="font-sans antialiased bg-white text-gray-900">
@@ -83,6 +86,21 @@
                                 <span
                                     class="absolute bottom-1.5 right-1.5 w-2 h-2 bg-emerald-400 border-2 border-white rounded-full"></span>
                             </a>
+
+                            {{-- Logout Button (Power Icon) --}}
+                            <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
+                                @csrf
+                            </form>
+                            <button type="button" onclick="confirmLogout(event)"
+                                class="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all group"
+                                aria-label="Sign Out">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="w-[22px] h-[22px] transition-transform group-hover:scale-110" fill="none"
+                                    viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
+                                </svg>
+                            </button>
                         @else
                             <a href="{{ route('login') }}"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
@@ -226,6 +244,35 @@
                 });
         }
         @endauth
+    </script>
+
+    <script>
+        /** Logout Confirmation – SweetAlert2 */
+        function confirmLogout(event) {
+            Swal.fire({
+                title: 'Sign Out',
+                text: "Are you sure you want to sign out from VoltMart?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb', // Blue-600
+                cancelButtonColor: '#ef4444', // Red-500
+                confirmButtonText: 'Yes, Sign Out',
+                cancelButtonText: 'Cancel',
+                background: '#ffffff',
+                color: '#111827',
+                iconColor: '#f59e0b',
+                customClass: {
+                    title: 'text-xl font-bold font-sans',
+                    popup: 'rounded-3xl shadow-2xl border border-gray-100 p-4',
+                    confirmButton: 'px-6 py-3 rounded-xl font-bold text-sm transition-all',
+                    cancelButton: 'px-6 py-3 rounded-xl font-bold text-sm transition-all'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        }
     </script>
 </body>
 

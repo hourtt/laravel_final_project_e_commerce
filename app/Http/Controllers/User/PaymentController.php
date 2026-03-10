@@ -41,6 +41,10 @@ class PaymentController extends Controller
         $cartProductIds  = [];   // passed to view so checkout-script can send it via AJAX
         $hash = $tranId = $amount = $merchant_id = $req_time = $currency = $payment_option = $return_url = $continue_success_url = '';
 
+        if (empty($cart)) {
+            return redirect()->route('dashboard')->with('error', 'Your cart is empty.');
+        }
+
         if (!empty($cart)) {
             $productIds = array_keys($cart);
             $products = Product::whereIn('id', $productIds)->get();
@@ -64,6 +68,17 @@ class PaymentController extends Controller
             $voucherDiscount = (float) session('voucher_discount', 0);
             $voucherCode     = session('voucher_code');
             $discountedTotal = max(0, $total - $voucherDiscount);
+
+            // Validation: Ensure order cannot be created with $0.00
+            if ($discountedTotal <= 0) {
+                $existingOrderId = session('order_id');
+                if ($existingOrderId) {
+                    Order::where('id', $existingOrderId)->where('status', 'Pending')->delete();
+                    session()->forget('order_id');
+                }
+                return redirect()->route('dashboard')
+                    ->with('error', 'Orders with a total price of $0.00 are not allowed.');
+            }
 
             // Build the product ID list for the JS voucher apply AJAX call.
             // Done here in the controller so it is available in the layout's
@@ -260,6 +275,16 @@ class PaymentController extends Controller
         // ── Apply voucher discount ────────────────────────────────────────────
         $voucherDiscount = (float) session('voucher_discount', 0);
         $discountedTotal = max(0, $total - $voucherDiscount);
+
+        // Validation for AJAX: total must be > 0
+        if ($discountedTotal <= 0) {
+            $orderId = session('order_id');
+            if ($orderId) {
+                Order::where('id', $orderId)->where('status', 'Pending')->delete();
+                session()->forget('order_id');
+            }
+            return response()->json(['error' => 'Orders with $0.00 total are not permitted.'], 422);
+        }
 
         try {
             // ── Resolve order ─────────────────────────────────────────────────

@@ -14,6 +14,9 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="font-sans antialiased">
@@ -34,6 +37,34 @@
             {{ $slot }}
         </main>
     </div>
+    <script>
+        /** Logout Confirmation – SweetAlert2 */
+        function confirmLogout(event) {
+            Swal.fire({
+                title: 'Sign Out',
+                text: "Are you sure you want to sign out from VoltMart?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, Sign Out',
+                cancelButtonText: 'Cancel',
+                background: '#ffffff',
+                color: '#111827',
+                iconColor: '#f59e0b',
+                customClass: {
+                    title: 'text-xl font-bold font-sans',
+                    popup: 'rounded-3xl shadow-2xl border border-gray-100 p-4',
+                    confirmButton: 'px-6 py-3 rounded-xl font-bold text-sm transition-all',
+                    cancelButton: 'px-6 py-3 rounded-xl font-bold text-sm transition-all'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>
