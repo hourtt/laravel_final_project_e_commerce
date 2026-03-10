@@ -53,7 +53,7 @@ class Voucher extends Model
     public function isValid(?int $productId = null): array
     {
         if (!$this->status) {
-            return ['valid' => false, 'message' => 'This voucher code is inactive.'];
+            return ['valid' => false, 'message' => 'This voucher code is inactive or has been expired.'];
         }
 
         if ($this->expires_at && $this->expires_at->isPast()) {
