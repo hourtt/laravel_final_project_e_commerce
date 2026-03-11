@@ -80,10 +80,12 @@
                         <button onclick="event.stopPropagation(); addToCart({{ $product->id }})"
                             class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black hover:scale-110 active:scale-95"
                             aria-label="Add to cart">
-                            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                                <circle cx="16.5" cy="18.5" r="1.5"/>
-                                <circle cx="9.5" cy="18.5" r="1.5"/>
-                                <path d="M18 16H8a1 1 0 0 1-.958-.713L4.256 6H3a1 1 0 0 1 0-2h2a1 1 0 0 1 .958.713L6.344 6H21a1 1 0 0 1 .937 1.352l-3 8A1 1 0 0 1 18 16zm-9.256-2h8.563l2.25-6H6.944z"/>
+                            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+                                fill="currentColor">
+                                <circle cx="16.5" cy="18.5" r="1.5" />
+                                <circle cx="9.5" cy="18.5" r="1.5" />
+                                <path
+                                    d="M18 16H8a1 1 0 0 1-.958-.713L4.256 6H3a1 1 0 0 1 0-2h2a1 1 0 0 1 .958.713L6.344 6H21a1 1 0 0 1 .937 1.352l-3 8A1 1 0 0 1 18 16zm-9.256-2h8.563l2.25-6H6.944z" />
                             </svg>
                         </button>
                     @endauth

@@ -47,14 +47,12 @@
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
                                 </svg>
-                                {{-- Cart count badge — stored in session --}}
+                                {{-- Cart count badge — updated dynamically by JS --}}
                                 @php $cartCount = session('cart') ? count(session('cart')) : 0; @endphp
-                                @if ($cartCount > 0)
-                                    <span
-                                        class="absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center leading-none shadow-sm">
-                                        {{ $cartCount > 99 ? '99+' : $cartCount }}
-                                    </span>
-                                @endif
+                                <span id="cart-count-badge"
+                                    class="{{ $cartCount > 0 ? '' : 'hidden' }} absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center leading-none shadow-sm">
+                                    {{ $cartCount > 99 ? '99+' : $cartCount }}
+                                </span>
                             </a>
 
                             {{-- My Orders --}}
@@ -232,17 +230,12 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'success',
-                            title: 'Added to cart!',
-                            showConfirmButton: false,
-                            timer: 2000,
-                            timerProgressBar: true
-                        }).then(() => {
-                            window.location.reload();
-                        });
+                        // Update cart badge dynamically
+                        const badge = document.getElementById('cart-count-badge');
+                        if (badge) {
+                            badge.textContent = data.cartCount > 99 ? '99+' : data.cartCount;
+                            badge.classList.remove('hidden');
+                        }
                     } else {
                         Swal.fire({
                             icon: 'error',

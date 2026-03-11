@@ -4,26 +4,25 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Voucher;
+use App\Models\Product;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 
 class VoucherController extends Controller
 {
     /**
      * AJAX: Validate and apply a voucher code.
-     *
-     * The client sends: { code, product_ids[] }
-     * We validate the code, check product scope, and return the discount data.
-     * The discount amount stays in the session for `preparePayment()` to deduct.
      */
     public function apply(Request $request)
     {
         $request->validate([
             'code' => 'required|string|max:50',
-            // product_ids no longer needed — we read the cart from session server-side
         ]);
 
-        $voucher = Voucher::where('code', strtoupper(trim($request->code)))->first();
+        $code = strtoupper(trim($request->code));
+        $voucher = Voucher::where('code', $code)->first();
 
+        // 1. Existence: Verify if the voucher code exists
         if (!$voucher) {
             return response()->json([
                 'success' => false,
@@ -31,24 +30,67 @@ class VoucherController extends Controller
             ], 422);
         }
 
-        // ── Product-scope check ───────────────────────────────────────────────
-        // Read the cart directly from the SERVER-SIDE session.
-        // Never trust client-sent product IDs — the session is the single source
-        // of truth and avoids all type-mismatch (int vs string) issues entirely.
+        // 2. Status: Check if active
+        if (!$voucher->status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This voucher is currently inactive.',
+            ], 422);
+        }
+
+        // 3. Expiry: Check if current date is within valid range
+        if ($voucher->expires_at && $voucher->expires_at->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Voucher expired',
+            ], 422);
+        }
+
+        // 4. Usage Rule: Prevent duplicate usage per product
+        $cart = session()->get('cart', []);
+        if (empty($cart)) {
+            return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
+        }
+
+        $userId = auth()->id();
+        if ($userId) {
+            foreach ($cart as $productId => $cartItem) {
+                // If this voucher applies to this specific product (either tied or general)
+                if ($voucher->product_id === null || (int)$voucher->product_id === (int)$productId) {
+                    
+                    // Check order_items to see if the user has already used this voucher for this product
+                    $alreadyUsed = OrderItem::where('product_id', $productId)
+                        ->where('voucher_code', $voucher->code)
+                        ->whereHas('order', function ($query) use ($userId) {
+                            $query->where('user_id', $userId);
+                        })
+                        ->exists();
+
+                    if ($alreadyUsed) {
+                        $product = Product::find($productId);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You have already used this voucher for ' . ($product->name ?? 'this product'),
+                        ], 422);
+                    }
+                }
+            }
+        }
+
+        // 5. Product-specific scope check (is the tied product in cart?)
         $matchedProductId = null;
         if ($voucher->product_id !== null) {
-            $cart           = session()->get('cart', []);
-            $cartProductIds = array_map('intval', array_keys($cart)); // keys are always strings in PHP
-
+            $cartProductIds = array_map('intval', array_keys($cart));
             if (!in_array((int) $voucher->product_id, $cartProductIds, true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This voucher is only valid for "' . ($voucher->product->name ?? 'a specific product') . '". That product is not in your cart.',
+                    'message' => 'This voucher is only valid for "' . ($voucher->product->name ?? 'a specific product') . '".',
                 ], 422);
             }
-            $matchedProductId = $voucher->product_id;
+            $matchedProductId = (int) $voucher->product_id;
         }
 
+        // 6. Final model-based validation (e.g. usage_limit)
         $result = $voucher->isValid($matchedProductId);
         if (!$result['valid']) {
             return response()->json([
@@ -57,15 +99,9 @@ class VoucherController extends Controller
             ], 422);
         }
 
-        // Calculate discount on current cart subtotal
-        $cart = session()->get('cart', []);
-        if (empty($cart)) {
-            return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
-        }
-
-        // More reliable: recalculate from DB
+        // Recalculate totals from DB
         $productIds = array_keys($cart);
-        $products   = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $products   = Product::whereIn('id', $productIds)->get()->keyBy('id');
         $subtotal   = 0;
         $discountableSubtotal = 0;
 
@@ -74,7 +110,6 @@ class VoucherController extends Controller
                 $itemTotal = $products[$productId]->price * $cartItem['quantity'];
                 $subtotal += $itemTotal;
                 
-                // If the voucher is tied to a specific product, only that product's total is considered for the percentage discount.
                 if ($voucher->product_id === null || $voucher->product_id == $productId) {
                     $discountableSubtotal += $itemTotal;
                 }
@@ -91,7 +126,7 @@ class VoucherController extends Controller
             ], 422);
         }
 
-        // Store in session so preparePayment() can read it
+        // Store in session
         session([
             'voucher_code'     => $voucher->code,
             'voucher_id'       => $voucher->id,
@@ -100,7 +135,7 @@ class VoucherController extends Controller
 
         return response()->json([
             'success'          => true,
-            'message'          => 'Voucher applied successfully!',
+            'message'          => 'Voucher applied successfully. Discount: $' . number_format($discountAmount, 2),
             'voucher_code'     => $voucher->code,
             'discount_type'    => $voucher->discount_type,
             'discount_value'   => $voucher->discount_value,
@@ -117,11 +152,11 @@ class VoucherController extends Controller
     {
         session()->forget(['voucher_code', 'voucher_id', 'voucher_discount']);
 
-        // Recalculate subtotal so the UI can revert
         $cart = session()->get('cart', []);
         $productIds = array_keys($cart);
-        $products   = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $products   = Product::whereIn('id', $productIds)->get()->keyBy('id');
         $subtotal   = 0;
+
         foreach ($cart as $productId => $cartItem) {
             if (isset($products[$productId])) {
                 $subtotal += $products[$productId]->price * $cartItem['quantity'];

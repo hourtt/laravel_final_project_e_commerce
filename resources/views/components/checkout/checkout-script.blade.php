@@ -62,6 +62,8 @@
                 }
 
                 // Show applied badge, hide input row
+                applyBtn.disabled = false;
+                applyBtn.textContent = 'Apply';
                 document.getElementById('voucher-input-row').style.display = 'none';
                 document.getElementById('voucher-applied-row').style.display = 'flex';
                 document.getElementById('applied-code-label').textContent = data.voucher_code;
@@ -103,6 +105,13 @@
                 document.getElementById('voucher-input-row').style.display = 'flex';
                 document.getElementById('voucher-applied-row').style.display = 'none';
                 document.getElementById('voucher-input').value = '';
+
+                // Reset the Apply button state specifically
+                const applyBtn = document.getElementById('voucher-apply-btn');
+                if (applyBtn) {
+                    applyBtn.disabled = false;
+                    applyBtn.textContent = 'Apply';
+                }
 
                 // Hide discount row
                 document.getElementById('discount-row').style.display = 'none';

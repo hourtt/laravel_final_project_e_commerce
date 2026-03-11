@@ -106,10 +106,10 @@
                         <button
                             onclick="addToCart({{ $product->id }}, document.querySelector('input[type=number]').value)"
                             class="flex-1 w-full bg-gray-900 hover:bg-black text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-gray-900/20 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                class="bi bi-cart-plus-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 11h9a.5.5 0 0 0 .496-.408l1.5-8A.5.5 0 0 0 14.5 2H2.89l-.405-1.621A.5.5 0 0 0 2 1zM.5 13a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2m-7 1a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1m7 0a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
                             </svg>
                             Add to Cart
                         </button>
