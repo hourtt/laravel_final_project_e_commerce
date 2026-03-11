@@ -41,9 +41,9 @@ class PaymentController extends Controller
         $cartProductIds  = [];   // passed to view so checkout-script can send it via AJAX
         $hash = $tranId = $amount = $merchant_id = $req_time = $currency = $payment_option = $return_url = $continue_success_url = '';
 
-        if (empty($cart)) {
-            return redirect()->route('dashboard')->with('error', 'Your cart is empty.');
-        }
+        // if (empty($cart)) {
+        //     return redirect()->route('dashboard')->with('error', 'Your cart is empty.');
+        // }
 
         if (!empty($cart)) {
             $productIds = array_keys($cart);

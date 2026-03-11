@@ -18,6 +18,8 @@ Route::get('/', [UserController::class, 'index'])->name('home');
 Route::get('/products/filter', [UserController::class, 'filter'])->name('products.filter');
 // AJAX: products search (case-insensitive, no auth required)
 Route::get('/products/search', [UserController::class, 'search'])->name('products.search');
+// Product Show page (Detail view)
+Route::get('/products/{id}', [UserController::class, 'show'])->name('products.show');
 
 //* User routes (logged in)
 Route::middleware(['auth'])->group(function () {

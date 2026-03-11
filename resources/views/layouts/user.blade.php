@@ -216,7 +216,7 @@
 
         @auth
         // Authenticated Cart Logic
-        function addToCart(productId) {
+        function addToCart(productId, quantity = 1) {
             fetch(`{{ url('/cart/add') }}`, {
                     method: 'POST',
                     headers: {
@@ -225,17 +225,30 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        product_id: productId
+                        product_id: productId,
+                        quantity: quantity
                     })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        // Quick and dirty cart badge refresh via full page reload for now
-                        // You can optionally swap this out for a purely dynamic JS update.
-                        window.location.reload();
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Added to cart!',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true
+                        }).then(() => {
+                            window.location.reload();
+                        });
                     } else {
-                        alert('Error adding to cart.');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: data.message || 'Error adding to cart.',
+                        });
                     }
                 })
                 .catch(err => {

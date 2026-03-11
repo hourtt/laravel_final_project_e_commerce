@@ -103,6 +103,19 @@ class UserController extends Controller
         return view('user.partials.product-grid', compact('products', 'category', 'categories', 'search'));
     }
 
+    /**
+     * Product Detail Page.
+     */
+    public function show($id)
+    {
+        $product = Product::with('category')->findOrFail($id);
+        
+        // Resolve breadcrumbs or categories if needed for the navbar/sidebar
+        $categories = Category::all();
+
+        return view('user.product-show', compact('product', 'categories'));
+    }
+
 
     /**
      * Add to cart (AJAX)
@@ -110,12 +123,13 @@ class UserController extends Controller
     public function addToCart(Request $request)
     {
         $productId = $request->input('product_id');
+        $quantityToAdd = (int) $request->input('quantity', 1);
         $product = Product::findOrFail($productId);
         
         $cart = session()->get('cart', []);
 
         $currentQty = isset($cart[$productId]) ? $cart[$productId]['quantity'] : 0;
-        $newQty = $currentQty + 1;
+        $newQty = $currentQty + $quantityToAdd;
 
         if ($newQty > $product->stock) {
             return response()->json([
@@ -125,10 +139,10 @@ class UserController extends Controller
         }
 
         if (isset($cart[$productId])) {
-            $cart[$productId]['quantity']++;
+            $cart[$productId]['quantity'] = $newQty;
         } else {
             $cart[$productId] = [
-                'quantity' => 1,
+                'quantity' => $quantityToAdd,
             ];
         }
 

@@ -44,22 +44,22 @@
         </button>
     </div>
 @else
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-start">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 items-start">
         @foreach ($products as $product)
-            <div
-                class="group relative bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer">
+            <div onclick="window.location.href='{{ route('products.show', $product->id) }}'"
+                class="group relative bg-white rounded-[16px] border border-gray-100 hover:border-blue-200 hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer">
 
                 {{-- Image --}}
                 <div
-                    class="relative bg-gradient-to-br from-gray-50 to-gray-100 aspect-square flex items-center justify-center p-5 overflow-hidden">
+                    class="relative bg-gradient-to-br from-gray-50 to-gray-100 aspect-square flex items-center justify-center p-6 overflow-hidden">
 
                     @if ($product->stock <= 0)
                         <span
-                            class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-400 text-white z-10">Out
+                            class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-400 text-white z-10">Out
                             of Stock</span>
                     @elseif($product->stock <= 5)
                         <span
-                            class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500 text-white z-10">Low
+                            class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500 text-white z-10">Low
                             Stock</span>
                     @endif
 
@@ -76,58 +76,31 @@
                         </div>
                     @endif
 
-                    {{-- Add to Cart --}}
                     @auth
-                        <button onclick="addToCart({{ $product->id }})"
-                            class="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-blue-700"
+                        <button onclick="event.stopPropagation(); addToCart({{ $product->id }})"
+                            class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black hover:scale-110 active:scale-95"
                             aria-label="Add to cart">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-cart" viewBox="0 0 16 16">
-                                <path
-                                    d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
-                            </svg>
-                        </button>
-                    @else
-                        <button onclick="showGuestCartModal()"
-                            class="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-gray-700"
-                            aria-label="Login required to add to cart">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-cart" viewBox="0 0 16 16">
-                                <path
-                                    d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
+                            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                                <circle cx="16.5" cy="18.5" r="1.5"/>
+                                <circle cx="9.5" cy="18.5" r="1.5"/>
+                                <path d="M18 16H8a1 1 0 0 1-.958-.713L4.256 6H3a1 1 0 0 1 0-2h2a1 1 0 0 1 .958.713L6.344 6H21a1 1 0 0 1 .937 1.352l-3 8A1 1 0 0 1 18 16zm-9.256-2h8.563l2.25-6H6.944z"/>
                             </svg>
                         </button>
                     @endauth
                 </div>
 
                 {{-- Info --}}
-                <div class="p-4 flex flex-col gap-1.5">
+                <div class="p-4 flex flex-col gap-1">
                     <span
-                        class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">{{ $product->category->name ?? 'Uncategorized' }}</span>
+                        class="text-[10px] font-bold text-blue-500 uppercase tracking-wider">{{ $product->category->name ?? 'Uncategorized' }}</span>
                     <h3
-                        class="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        class="text-sm font-semibold text-gray-800 leading-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
                         {{ $product->name }}
                     </h3>
-                    {{-- Expandable Description (accordion + gradient fade) --}}
-                    <div x-data="{ open: false, uid: {{ $product->id }} }" @close-descs.window="if ($event.detail.except !== uid) open = false"
-                        class="mt-0.5">
-                        <div class="relative">
-                            <div class="overflow-hidden transition-all duration-300 ease-in-out text-[11px] text-gray-400 leading-[1.5rem]"
-                                :style="open ? 'max-height: 20rem' : 'max-height: 4.5rem'">{{ $product->description }}
-                            </div>
-                            {{-- Soft gradient fade when collapsed --}}
-                            <div x-show="!open"
-                                class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none">
-                            </div>
-                        </div>
-                        <button @click.stop="open = !open; if (open) $dispatch('close-descs', { except: uid })"
-                            class="text-[10px] text-gray-500 hover:text-blue-700 font-semibold mt-1 focus:outline-none transition-colors duration-150"
-                            x-text="open ? 'See Less' : 'See More'"></button>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-                        <p class="text-base font-notosan text-gray-900">${{ number_format($product->price, 2) }}</p>
-                        <span class="text-[10px] text-gray-400 font-medium">Stock:
-                            {{ $product->stock ?? 'N/A' }}</span>
+
+                    <div class="mt-3 flex items-center justify-between">
+                        <p class="text-[15px] font-bold text-gray-900">${{ number_format($product->price, 2) }}</p>
+                        <span class="text-[10px] text-gray-400 font-medium">Stock: {{ $product->stock ?? '0' }}</span>
                     </div>
                 </div>
             </div>
