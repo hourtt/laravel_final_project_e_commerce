@@ -14,7 +14,8 @@ class ProductController extends Controller
     {
         $search   = trim($request->input('search', ''));
         $searchBy = $request->input('search_by', 'name'); // 'name' | 'category'
-
+        $sortBy = $request->input('sort_by', 'stock');
+        $order = $request->input('order', 'desc');
         $products = Product::with('category')
             ->when($search !== '', function ($q) use ($search, $searchBy) {
                 if ($searchBy === 'category') {
@@ -25,11 +26,10 @@ class ProductController extends Controller
                     $q->where('name', 'like', "%{$search}%");
                 }
             })
-            ->latest()
+            ->orderBy($sortBy, $order)
             ->get();
-        return view('admin.products.index', compact('products', 'search', 'searchBy'));
+        return view('admin.products.index', compact('products', 'search', 'searchBy','sortBy','order'));
     }
-
     public function create()
     {
         $categories = Category::all();
