@@ -16,11 +16,11 @@
                     </span>
                     My Orders
                 </a>
-                <h1 class="text-2xl font-extrabold text-gray-900">
+                <h1 class="text-2xl font-bold text-gray-900">
                     Order #{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
                 </h1>
                 <p class="text-sm text-gray-400 mt-0.5">
-                    Placed on {{ $order->created_at->format('F d, Y \a\t h:i A') }}
+                    Purchased on {{ $order->created_at->format('F d, Y \a\t h:i A') }}
                 </p>
             </div>
 
@@ -121,7 +121,7 @@
                                 </div>
 
                                 {{-- Line total --}}
-                                <p class="text-sm font-extrabold text-gray-900 shrink-0">
+                                <p class="text-sm font-bold text-gray-900 shrink-0">
                                     ${{ number_format($item->quantity * $item->price, 2) }}
                                 </p>
                             </li>
@@ -152,7 +152,7 @@
                         <div class="flex justify-between items-center px-5 py-4 bg-slate-50 border-t border-gray-100">
                             <span class="text-sm font-bold text-gray-700">Order Total</span>
                             <span
-                                class="text-xl font-extrabold text-gray-900">${{ number_format($order->total_price, 2) }}</span>
+                                class="text-xl font-bold text-gray-900">${{ number_format($order->total_price, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -197,7 +197,7 @@
                             <div class="flex justify-between pt-2 border-t border-gray-100">
                                 <span class="font-bold text-gray-900">Total</span>
                                 <span
-                                    class="font-extrabold text-gray-900 text-base">${{ number_format($order->total_price, 2) }}</span>
+                                    class="font-bold text-gray-900 text-base">${{ number_format($order->total_price, 2) }}</span>
                             </div>
                         </div>
                     </div>
