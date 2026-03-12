@@ -55,11 +55,11 @@
 
                     @if ($product->stock <= 0)
                         <span
-                            class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-400 text-white z-10">Out
+                            class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold  bg-gray-400 text-white z-10">Out
                             of Stock</span>
                     @elseif($product->stock <= 5)
                         <span
-                            class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500 text-white z-10">Low
+                            class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold  bg-amber-500 text-white z-10">Low
                             Stock</span>
                     @endif
 
@@ -94,7 +94,7 @@
                 {{-- Info --}}
                 <div class="p-4 flex flex-col gap-1">
                     <span
-                        class="text-[10px] font-bold text-blue-500 uppercase tracking-wider">{{ $product->category->name ?? 'Uncategorized' }}</span>
+                        class="text-[10px] font-bold text-blue-500  tracking-wider">{{ $product->category->name ?? 'Uncategorized' }}</span>
                     <h3
                         class="text-sm font-semibold text-gray-800 leading-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
                         {{ $product->name }}
