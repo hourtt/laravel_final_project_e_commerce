@@ -4,7 +4,7 @@
         {{-- Page Header --}}
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-extrabold text-gray-900">My Orders</h1>
+                <h1 class="text-2xl font-bold text-gray-900">My Orders</h1>
                 <p class="text-sm text-gray-400 mt-1">View your complete purchase history</p>
             </div>
             <a href="{{ route('home') }}"
@@ -63,8 +63,7 @@
                                 🛍️
                             </div>
                             <div>
-                                <p
-                                    class="text-sm font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                <p class="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                                     Order #{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
                                 </p>
                                 <p class="text-xs text-gray-400 mt-0.5">
@@ -90,7 +89,7 @@
                                 {{ $s['label'] }}
                             </span>
                             <div class="text-right">
-                                <p class="text-base font-extrabold text-gray-900 min-w-[80px]">
+                                <p class="text-base font-bold text-gray-900 min-w-[80px]">
                                     ${{ number_format($order->total_price, 2) }}
                                 </p>
                                 @if ($hasDiscount)

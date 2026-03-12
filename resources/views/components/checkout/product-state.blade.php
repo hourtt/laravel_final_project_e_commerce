@@ -196,7 +196,7 @@
                      <span class="text-sm font-semibold text-gray-900">Total</span>
 
                      <div x-data="priceOdometer({{ $finalTotal }})" x-on:price-updated.window="onPriceUpdated($event.detail)"
-                         class="odometer-wrapper flex items-baseline gap-0 font-extrabold text-[1.4rem] leading-none select-none"
+                         class="odometer-wrapper flex items-baseline gap-0 font-bold text-[1.4rem] leading-none select-none"
                          :class="flashColor">
                          <span class="mr-[1px]">$</span>
 

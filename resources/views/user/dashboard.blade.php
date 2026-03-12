@@ -29,7 +29,7 @@
                     class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-semibold mb-6 tracking-wide uppercase">
                     ⚡ New Arrivals 2026
                 </span>
-                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-5">
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-5">
                     Premium Tech,<br>
                     <span class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Unbeatable
                         Prices</span>
@@ -62,7 +62,7 @@
                     <div
                         class="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm text-center hover:bg-white/10 transition-colors duration-300">
                         <div class="text-2xl mb-2">{{ $stat['icon'] }}</div>
-                        <div class="text-2xl font-extrabold text-white">{{ $stat['value'] }}</div>
+                        <div class="text-2xl font-bold text-white">{{ $stat['value'] }}</div>
                         <div class="text-slate-400 text-xs font-medium mt-0.5">{{ $stat['label'] }}</div>
                     </div>
                 @endforeach
@@ -77,7 +77,7 @@
 
         <!-- Section Header -->
         <div class="mb-8 text-center">
-            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Our Products</h2>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Our Products</h2>
             <p class="text-gray-500 mt-2 text-sm">Browse our full collection — search or filter by category.
             </p>
         </div>
