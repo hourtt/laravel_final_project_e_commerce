@@ -41,27 +41,21 @@
                     @else
                         <div class="text-8xl opacity-20">📦</div>
                     @endif
-
-                    {{-- Visual decorative element --}}
-                    <div
-                        class="absolute top-6 right-6 px-4 py-2 rounded-full bg-white/80 backdrop-blur-md border border-white shadow-sm text-xs font-bold text-gray-500 uppercase tracking-widest">
-                        Model 2026
-                    </div>
                 </div>
             </div>
 
             {{-- Right Side: Product Info --}}
             <div class="w-full lg:w-1/2 flex flex-col pt-4">
-                <span class="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-3">
+                <span class="text-sm font-semibold text-blue-600 tracking-[0.2em] mb-3">
                     {{ $product->category->name ?? 'Uncategorized' }}
                 </span>
 
-                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-4">
                     {{ $product->name }}
                 </h1>
 
                 <div class="flex items-center gap-4 mb-8">
-                    <span class="text-3xl font-extrabold text-gray-900">
+                    <span class="text-3xl font-bold text-gray-900">
                         ${{ number_format($product->price, 2) }}
                     </span>
                     <span
@@ -71,7 +65,7 @@
                 </div>
 
                 <div class="border-t border-gray-100 pt-8 mb-8">
-                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Description</h3>
+                    <h3 class="text-sm font-bold text-gray-600 tracking-widest mb-4">Description</h3>
                     <p class="text-gray-600 leading-relaxed text-lg">
                         {{ $product->description }}
                     </p>
