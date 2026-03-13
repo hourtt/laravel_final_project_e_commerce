@@ -16,9 +16,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        $user = $request->user();
+        
+        // Fetch dashboard stats for the presentation
+        $totalOrders = $user->orders()->count();
+        $totalSpent  = $user->orders()->where('status', 'Completed')->sum('total_price');
+        $totalSaved  = $user->orders()->sum('voucher_discount') ?? 0;
+
+        return view('profile.edit', compact('user', 'totalOrders', 'totalSpent', 'totalSaved'));
     }
 
     /**
