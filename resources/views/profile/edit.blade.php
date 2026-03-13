@@ -2,7 +2,7 @@
     <div class="py-12 bg-gray-50/50 min-h-screen" x-data="{ activeTab: 'profiles' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
-            <!-- 🎭 Profile Hero Section -->
+            <!-- Profile Hero Section -->
             <div class="relative overflow-hidden bg-white rounded-3xl shadow-sm border border-gray-100 mt-2">
                 <!-- Decorative Background Blur -->
                 <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl"></div>
@@ -67,7 +67,7 @@
                 </div>
             </div>
 
-            <!-- 📊 Dashboard Stats Grid (Hidden for Admins) -->
+            <!--  Dashboard Stats Grid (Hidden for Admins) -->
             @if ($user->role !== 'admin')
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <!-- Stat: Total Orders -->
@@ -115,7 +115,7 @@
                 </div>
             @endif
 
-            <!-- 📝 Sidebar Navigation Layout -->
+            <!-- Sidebar Navigation Layout -->
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- Left Column: Navigation Menu -->
                 <div class="w-full lg:w-72 space-y-2">
@@ -147,7 +147,7 @@
                             @csrf
                         </form>
                         <button onclick="confirmLogout(event)"
-                            class="w-full flex items-center gap-3 px-5 py-4 rounded-2xl font-bold text-sm text-red-600 hover:bg-red-50 transition-all duration-200">
+                            class="w-full flex items-center gap-3 px-5 py-4 rounded-2xl font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition-all duration-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
