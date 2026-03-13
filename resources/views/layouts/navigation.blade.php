@@ -34,19 +34,6 @@
                 <div class="text-sm font-bold text-gray-700 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
                     {{ Auth::user()->name }}
                 </div>
-
-                {{-- Logout Button (Power Icon) --}}
-                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
-                    @csrf
-                </form>
-                <button type="button" onclick="confirmLogout(event)"
-                    class="ms-2 flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all group"
-                    aria-label="Sign Out">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform group-hover:scale-110"
-                        fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
-                    </svg>
-                </button>
             </div>
 
             <!-- Hamburger -->
