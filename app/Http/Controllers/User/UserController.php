@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\Voucher;
+use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
@@ -18,31 +19,35 @@ class UserController extends Controller
     private function resolveProducts(Request $request): array
     {
         $category   = $request->query('category', 'All');
-        //* Define $search variable for user searching product 
         $search     = trim($request->query('search', ''));
-        $categories = Category::pluck('name')->toArray();
-        array_unshift($categories, 'All');
+        
+        // Cache category names for 1 hour to avoid repeated DB hits
+        $categories = Cache::remember('category_names_list', 3600, function () {
+            $names = Category::pluck('name')->toArray();
+            array_unshift($names, 'All');
+            return $names;
+        });
 
-        $query = Product::with('category')
-            ->select('products.*')
-            ->leftJoin('categories', 'categories.id', '=', 'products.category_id');
+        $query = Product::with('category');
 
-        // Search filter — case-insensitive via LOWER() + LIKE
         if ($search !== '') {
             $term = '%' . strtolower($search) . '%';
-            $query->whereRaw('LOWER(products.name) LIKE ?', [$term]);
-            // When searching, ignore category filter and show newest first
-            $query->orderBy('products.id', 'desc');
+            // Use ILIKE for better performance in PostgreSQL
+            $query->where('name', 'ILIKE', $term);
+            $query->latest();
         } elseif ($category === 'All') {
-            // Random products for the 'All' tab (no search)
-            $query->inRandomOrder();
+            // "inRandomOrder" is very slow on large datasets/cloud DBs. 
+            // Using latest() is much faster.
+            $query->latest();
         } else {
-            // Specific category: show newest first
-            $query->where('categories.name', $category)
-                  ->orderBy('products.id', 'desc');
+            // Filter by category name
+            $query->whereHas('category', function ($q) use ($category) {
+                $q->where('name', $category);
+            })->latest();
         }
 
-        $products = $query->get();
+        // Limit results to 50 for better speed
+        $products = $query->take(50)->get();
 
         return compact('products', 'categories', 'category', 'search');
     }
