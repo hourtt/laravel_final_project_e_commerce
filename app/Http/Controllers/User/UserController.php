@@ -22,7 +22,7 @@ class UserController extends Controller
         $search     = trim($request->query('search', ''));
         
         // Cache category names for 1 hour to avoid repeated DB hits
-        $categories = Cache::remember('category_names_list', 3600, function () {
+        $categories = Cache::remember('category_names_list', 600, function () {
             $names = Category::pluck('name')->toArray();
             array_unshift($names, 'All');
             return $names;
