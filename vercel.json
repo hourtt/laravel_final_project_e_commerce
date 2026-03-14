@@ -6,20 +6,24 @@
     },
     "routes": [
         {
-            "src": "/build/(.*)",
-            "dest": "/build/$1"
+            "src": "/(build|images|css|js|storage)/(.*)",
+            "dest": "/public/$1/$2"
         },
         {
-            "src": "/(.*\\.(?:css|js|png|jpg|jpeg|gif|svg|ico))$",
-            "dest": "/public/$1"
+            "src": "/favicon.ico",
+            "dest": "/public/favicon.ico"
+        },
+        {
+            "src": "/robots.txt",
+            "dest": "/public/robots.txt"
         },
         {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
     ],
-    "outputDirectory": "public",
     "env": {
+        "ASSET_URL": "https://laravel-final-project-e-commerce.vercel.app",
         "APP_ENV": "production",
         "APP_DEBUG": "true",
         "APP_URL": "https://laravel-final-project-e-commerce.vercel.app",
