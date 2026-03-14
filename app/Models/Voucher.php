@@ -27,6 +27,16 @@ class Voucher extends Model
     ];
 
     /**
+     * Mutator to ensure status is saved correctly as a boolean literal for Postgres.
+     * When emulating prepares, PDO might convert true/false to 1/0, which
+     * Postgres rejects for boolean columns. Using DB::raw('true/false') avoids this.
+     */
+    public function setStatusAttribute($value)
+    {
+        $this->attributes['status'] = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? \DB::raw('true') : \DB::raw('false');
+    }
+
+    /**
      * Relationship: the specific product this voucher is tied to (nullable).
      */
     public function product()

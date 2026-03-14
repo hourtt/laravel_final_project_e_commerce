@@ -18,7 +18,7 @@ class VoucherController extends Controller
         // Safety net: deactivate any voucher whose used_count has reached the
         // usage_limit but whose status is still marked active (can happen if the
         // payment webhook ran before the browser-redirect session was available).
-        Voucher::where('status', true)
+        Voucher::whereRaw('status = true')
             ->whereNotNull('usage_limit')
             ->whereColumn('used_count', '>=', 'usage_limit')
             ->get()
