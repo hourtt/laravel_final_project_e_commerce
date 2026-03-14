@@ -54,6 +54,7 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    //* This is used for the storage:link command and also for the assset_url when deploying
     'asset_url' => env('ASSET_URL'),
 
     /*

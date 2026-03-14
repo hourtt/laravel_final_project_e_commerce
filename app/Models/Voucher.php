@@ -100,14 +100,11 @@ class Voucher extends Model
             ->increment('used_count');
 
         // Step 2: deactivate in one atomic statement if limit is now reached.
-        // WHERE used_count >= usage_limit ensures this is idempotent and safe
-        // under concurrent requests.
-        \DB::table('vouchers')
-            ->where('id', $this->id)
-            ->whereNotNull('usage_limit')
-            ->whereColumn('used_count', '>=', 'usage_limit')
-            ->where('status', true)
-            ->update(['status' => false]);
+        // We refresh the model first to get the updated used_count from DB.
+        $this->refresh();
+        if ($this->usage_limit !== null && $this->used_count >= $this->usage_limit && $this->status) {
+            $this->update(['status' => false]);
+        }
 
         // Refresh the in-memory model so callers see the updated values
         $this->refresh();

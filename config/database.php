@@ -94,6 +94,7 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
+            //* You need to change the name of search_path to your database name (Default is public) when you're using with supabase (database name is created on table editor)
             'search_path' => 'laravel',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'options' => [

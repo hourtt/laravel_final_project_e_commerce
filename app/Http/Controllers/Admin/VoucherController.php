@@ -21,7 +21,10 @@ class VoucherController extends Controller
         Voucher::where('status', true)
             ->whereNotNull('usage_limit')
             ->whereColumn('used_count', '>=', 'usage_limit')
-            ->update(['status' => false]);
+            ->get()
+            ->each(function ($voucher) {
+                $voucher->update(['status' => false]);
+            });
 
         $vouchers = Voucher::with('product')->latest()->paginate(15);
         return view('admin.vouchers.index', compact('vouchers'));
