@@ -23,10 +23,9 @@
         }
     ],
     "env": {
-        "ASSET_URL": "https://laravel-final-project-e-commerce.vercel.app",
         "APP_ENV": "production",
         "APP_DEBUG": "true",
-        "APP_URL": "https://laravel-final-project-e-commerce.vercel.app",
+        "APP_URL": "https://laravel-project-e-commerce.vercel.app",
         "APP_KEY": "base64:kH+0VEW/DZPdRCbn6bJdug4tFn3H9YyzMG+DEdHHB6U=",
 
         "DB_CONNECTION": "pgsql",
