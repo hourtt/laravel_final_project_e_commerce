@@ -11,14 +11,49 @@
 
                 <div class="relative p-8 sm:p-10 flex flex-col md:flex-row items-center gap-8">
                     <!-- Profile Avatar -->
-                    <div class="relative group">
+                    <div class="relative group" x-data="avatarPreview()">
                         <div
                             class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000">
                         </div>
-                        <div class="relative w-32 h-32 bg-white rounded-full p-1 shadow-inner">
-                            <img src="{{ $user->profile_image ? asset('storage/' . $user->profile_image) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=2563eb&color=fff&size=200' }}"
-                                alt="{{ $user->name }}" class="w-full h-full rounded-full object-cover">
+                        <div class="relative w-32 h-32 bg-white rounded-full p-1 shadow-inner overflow-hidden">
+                            <img :src="imageUrl" id="avatar-preview" alt="{{ $user->name }}"
+                                class="w-full h-full rounded-full object-cover">
+
+                            <!-- Overlay/Pencil Icon -->
+                            <label for="profile_image_input"
+                                class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </label>
+
+                            <!-- Hidden Form for Upload -->
+                            <form id="avatar-form" action="{{ route('profile.image.update') }}" method="POST"
+                                enctype="multipart/form-data" class="hidden">
+                                @csrf
+                                <input type="file" id="profile_image_input" name="profile_image" accept="image/*"
+                                    @change="updatePreview">
+                            </form>
                         </div>
+                        <!-- Remove Image Button -->
+                        @if ($user->profile_image)
+                            <div class="absolute -bottom-2 -right-2 flex gap-1">
+                                <form action="{{ route('profile.image.destroy') }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors group/remove"
+                                        title="Remove Image">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- User Info -->
@@ -193,7 +228,25 @@
                     </div>
                 </div>
             </div>
-
+            <script>
+                function avatarPreview() {
+                    return {
+                        imageUrl: '{{ $user->profile_image_url }}',
+                        updatePreview(event) {
+                            const file = event.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    this.imageUrl = e.target.result;
+                                    // Auto-submit the form once a file is selected
+                                    document.getElementById('avatar-form').submit();
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        }
+                    }
+                }
+            </script>
         </div>
     </div>
 </x-app-layout>
