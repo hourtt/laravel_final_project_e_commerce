@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -39,7 +40,47 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return redirect()->route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Update the user's profile image.
+     */
+    public function updateImage(Request $request): RedirectResponse
+    {
+        $image = ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'];
+
+        $request->validate([
+            'profile_image' => $image,
+        ]);
+
+        $user = $request->user();
+
+        // Delete old image if it exists
+        if ($user->profile_image) {
+            Storage::disk('public')->delete($user->profile_image);
+        }
+
+        // Store new image
+        $path = $request->file('profile_image')->store('profile-images', 'public');
+        $user->update(['profile_image' => $path]);
+
+        return redirect()->route('profile.edit')->with('status', 'profile-image-updated');
+    }
+
+    /**
+     * Remove the user's profile image.
+     */
+    public function destroyImage(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->profile_image) {
+            Storage::disk('public')->delete($user->profile_image);
+            $user->update(['profile_image' => null]);
+        }
+
+        return redirect()->route('profile.edit')->with('status', 'profile-image-removed');
     }
 
     /**
@@ -60,6 +101,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return redirect('/');
     }
 }
