@@ -31,8 +31,13 @@
 
             <!-- Settings (Simplified, No Dropdown)-->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <div class="text-sm font-bold text-gray-700 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
-                    {{ Auth::user()->name }}
+                <div class="flex items-center gap-2 text-sm font-bold text-gray-700 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
+                    <div class="w-7 h-7 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                        <img src="{{ auth()->user()->profile_image_url }}" 
+                             alt="{{ auth()->user()->name }}" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <span>{{ Auth::user()->name }}</span>
                 </div>
             </div>
 
