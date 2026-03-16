@@ -97,8 +97,9 @@
             class="scroll-mt-6 xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                    <h2 class="text-base font-bold text-gray-900">Recent Products</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">Latest products in the store</p>
+                    <h2 class="text-base font-bold text-gray-900">Product Stocks</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">All products are listed with their available stock as
+                        descending order</p>
                 </div>
                 <a href="{{ route('admin.products.create') }}"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/30">
