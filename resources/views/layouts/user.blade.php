@@ -73,12 +73,11 @@
                             <a href="{{ route('profile.edit') }}"
                                 class="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-gray-100 transition-colors group"
                                 aria-label="My Profile">
-                                {{-- Avatar with first letter --}}
-                                <div
-                                    class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                                    <span class="text-white text-xs font-bold leading-none">
-                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                                    </span>
+                                {{-- Avatar Image --}}
+                                <div class="w-7 h-7 rounded-full overflow-hidden shadow-sm group-hover:scale-110 transition-transform bg-gray-100 border border-gray-100">
+                                    <img src="{{ auth()->user()->profile_image_url }}" 
+                                         alt="{{ auth()->user()->name }}" 
+                                         class="w-full h-full object-cover">
                                 </div>
                                 {{-- Online dot --}}
                                 <span
