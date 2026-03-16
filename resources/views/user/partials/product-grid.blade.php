@@ -26,7 +26,7 @@
 
 {{-- Product Grid --}}
 @if ($products->isEmpty())
-    <div class="flex flex-col items-center justify-center py-24 text-center">
+    <div class="flex flex-col items-center justify-center py-24 text-center animate-fade-up">
         <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4">
             {{ $search !== '' ? '🔍' : '📭' }}
         </div>
@@ -38,16 +38,17 @@
                 There are no products in this category yet.
             @endif
         </p>
-        <button onclick="clearSearch()"
-            class="mt-6 px-6 py-2.5 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
+        <button @click="activeSearch = ''; search('')"
+            class="mt-6 px-6 py-2.5 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all active:scale-95 shadow-md">
             {{ $search !== '' ? 'Clear Search' : 'View All Products' }}
         </button>
     </div>
 @else
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 items-start">
-        @foreach ($products as $product)
+        @foreach ($products as $index => $product)
             <div onclick="window.location.href='{{ route('products.show', $product->id) }}'"
-                class="group relative bg-white rounded-[16px] border border-gray-100 hover:border-blue-200 hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer">
+                class="group relative bg-white rounded-[24px] border border-gray-100/80 hover:border-blue-200 hover:shadow-[0_20px_50px_rgba(59,130,246,0.12)] hover:-translate-y-1.5 transition-all duration-500 overflow-hidden flex flex-col cursor-pointer animate-fade-up"
+                style="animation-delay: {{ $index * 50 }}ms; opacity: 0;">
 
                 {{-- Image --}}
                 <div
@@ -65,7 +66,7 @@
 
                     @if ($product->image_url)
                         <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
-                            class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
+                            class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 mix-blend-multiply"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
                         <div class="hidden w-full h-full items-center justify-center text-5xl">
                             {{ $categoryIcons[$product->category->name ?? ''] ?? '📦' }}
@@ -77,8 +78,8 @@
                     @endif
 
                     @auth
-                        <button onclick="event.stopPropagation(); addToCart({{ $product->id }})"
-                            class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black hover:scale-110 active:scale-95"
+                        <button onclick="event.stopPropagation(); if(typeof addToCart === 'function') addToCart({{ $product->id }})"
+                            class="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-blue-600 hover:scale-110 active:scale-90"
                             aria-label="Add to cart">
                             <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
                                 fill="currentColor">
@@ -94,7 +95,7 @@
                 {{-- Info --}}
                 <div class="p-4 flex flex-col gap-1">
                     <span
-                        class="text-[10px] font-bold text-blue-500  tracking-wider">{{ $product->category->name ?? 'Uncategorized' }}</span>
+                        class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">{{ $product->category->name ?? 'Uncategorized' }}</span>
                     <h3
                         class="text-sm font-semibold text-gray-800 leading-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
                         {{ $product->name }}
@@ -102,10 +103,15 @@
 
                     <div class="mt-3 flex items-center justify-between">
                         <p class="text-[15px] font-bold text-gray-900">${{ number_format($product->price, 2) }}</p>
-                        <span class="text-[10px] text-gray-400 font-medium">Stock: {{ $product->stock ?? '0' }}</span>
+                        <span class="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">Stock: {{ $product->stock ?? '0' }}</span>
                     </div>
                 </div>
             </div>
         @endforeach
+    </div>
+
+    {{-- Pagination --}}
+    <div class="mt-12 flex justify-center">
+        {{ $products->links() }}
     </div>
 @endif
