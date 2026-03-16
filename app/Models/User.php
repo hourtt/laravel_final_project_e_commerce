@@ -55,4 +55,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+
+    /**
+     * Get the URL for the user's profile image.
+     */
+    public function getProfileImageUrlAttribute(): string
+    {
+        return $this->profile_image 
+            ? asset('storage/' . $this->profile_image) 
+            : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=2563eb&color=fff&size=200';
+    }
 }
