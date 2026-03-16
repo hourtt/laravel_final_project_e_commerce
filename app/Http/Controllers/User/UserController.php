@@ -22,7 +22,7 @@ class UserController extends Controller
         $search     = trim($request->query('search', ''));
         
         // Cache category names for 1 hour to avoid repeated DB hits
-        $categories = Cache::remember('category_names_list', 600, function () {
+        $categories = Cache::remember('category_names_list', 3600, function () {
             $names = Category::pluck('name')->toArray();
             array_unshift($names, 'All');
             return $names;
@@ -32,22 +32,18 @@ class UserController extends Controller
 
         if ($search !== '') {
             $term = '%' . strtolower($search) . '%';
-            // Use ILIKE for better performance in PostgreSQL
             $query->where('name', 'ILIKE', $term);
             $query->latest();
         } elseif ($category === 'All') {
-            // "inRandomOrder" is very slow on large datasets/cloud DBs. 
-            // Using latest() is much faster.
             $query->latest();
         } else {
-            // Filter by category name
             $query->whereHas('category', function ($q) use ($category) {
                 $q->where('name', $category);
             })->latest();
         }
 
-        // Limit results to 50 for better speed
-        $products = $query->take(50)->get();
+        // Use pagination instead of take(50)
+        $products = $query->paginate(20)->withQueryString();
 
         return compact('products', 'categories', 'category', 'search');
     }
@@ -61,7 +57,13 @@ class UserController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        return view('user.dashboard', $this->resolveProducts($request));
+        $data = $this->resolveProducts($request);
+
+        if ($request->ajax()) {
+            return view('user.partials.product-grid', $data);
+        }
+
+        return view('user.dashboard', $data);
     }
 
     /**
@@ -73,7 +75,13 @@ class UserController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        return view('user.dashboard', $this->resolveProducts($request));
+        $data = $this->resolveProducts($request);
+
+        if ($request->ajax()) {
+            return view('user.partials.product-grid', $data);
+        }
+
+        return view('user.dashboard', $data);
     }
 
     /**
@@ -82,14 +90,7 @@ class UserController extends Controller
      */
     public function filter(Request $request)
     {
-        [
-            'products'   => $products,
-            'category'   => $category,
-            'categories' => $categories,
-            'search'     => $search,
-        ] = $this->resolveProducts($request);
-
-        return view('user.partials.product-grid', compact('products', 'category', 'categories', 'search'));
+        return view('user.partials.product-grid', $this->resolveProducts($request));
     }
 
     /**
@@ -98,14 +99,7 @@ class UserController extends Controller
      */
     public function search(Request $request)
     {
-        [
-            'products'   => $products,
-            'category'   => $category,
-            'categories' => $categories,
-            'search'     => $search,
-        ] = $this->resolveProducts($request);
-
-        return view('user.partials.product-grid', compact('products', 'category', 'categories', 'search'));
+        return view('user.partials.product-grid', $this->resolveProducts($request));
     }
 
     /**
