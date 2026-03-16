@@ -308,10 +308,10 @@
             <div class="px-3 py-4 border-t border-white/10 flex-shrink-0">
                 <a href="{{ route('profile.edit') }}"
                     class="profile-row flex items-center gap-3 px-3 py-2 rounded-xl w-full flexhover:bg-white/10 transition-colors mb-1">
-                    <div
-                        class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span
-                            class="text-white text-xs font-bold leading-none">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</span>
+                    <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm flex-shrink-0 bg-slate-800 border border-slate-700">
+                        <img src="{{ auth()->user()->profile_image_url }}" 
+                             alt="{{ auth()->user()->name }}" 
+                             class="w-full h-full object-cover">
                     </div>
                     <div class="user-info flex-1 min-w-0 nav-label">
                         <p class="text-white text-sm font-semibold truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
