@@ -16,7 +16,8 @@ class AdminController extends Controller
         $totalStock     = Product::sum('stock');
         $avgPrice       = Product::avg('price');
         $categories     = Category::count();
-        $recentProducts = Product::with('category')->latest()->paginate(8)->withQueryString()->fragment('recent-products');
+        //* Fragment() method enhances user experience by preventing page jumps, commonly used with pagination
+        $recentProducts = Product::with('category')->orderBy('stock', 'desc')->paginate(5)->withQueryString()->fragment('recent-products');
         $categoryStats  = Category::withCount('products')
                             ->withSum('products', 'stock')
                             ->get();
