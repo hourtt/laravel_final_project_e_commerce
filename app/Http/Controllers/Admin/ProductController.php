@@ -14,8 +14,8 @@ class ProductController extends Controller
     {
         $search   = trim($request->input('search', ''));
         $searchBy = $request->input('search_by', 'name'); // 'name' | 'category'
-        $sortBy = $request->input('sort_by', 'stock');
-        $order = $request->input('order', 'desc');
+        $sortBy = 'stock';
+        $order = 'desc';
         $products = Product::with('category')
             ->when($search !== '', function ($q) use ($search, $searchBy) {
                 if ($searchBy === 'category') {
