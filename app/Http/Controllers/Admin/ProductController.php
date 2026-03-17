@@ -31,7 +31,7 @@ class ProductController extends Controller
 
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('admin.products.partials.product_table', compact('products'))->render(),
+                'html' => view('admin.products.product_table', compact('products'))->render(),
                 'pagination' => (string) $products->links(),
                 'total' => $products->total(),
             ]);
