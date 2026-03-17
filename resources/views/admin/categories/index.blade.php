@@ -34,7 +34,16 @@
                     @forelse($categories as $category)
                         <tr class="hover:bg-slate-50/50 transition-colors">
                             <td class="px-6 py-3.5 text-center font-semibold text-gray-800">{{ $category->name }}</td>
-                            <td class="px-4 py-3.5 text-center text-xl">{{ $category->icon ?? '📦' }}</td>
+                            <td class="px-4 py-3.5 text-center">
+                                @if($category->icon && str_contains($category->icon, 'images/category/'))
+                                    <img src="{{ asset(str_replace('public/', '', $category->icon)) }}" 
+                                         alt="{{ $category->name }}" 
+                                         class="w-8 h-8 mx-auto object-contain"
+                                         onerror="this.onerror=null; this.parentElement.innerHTML='📦'">
+                                @else
+                                    <span class="text-xl">{{ $category->icon ?? '📦' }}</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3.5 text-center font-semibold text-gray-600">
                                 {{ $category->products_count }} items
                             </td>

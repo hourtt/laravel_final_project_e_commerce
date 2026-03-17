@@ -1,12 +1,4 @@
 @php
-    $categoryIcons = [
-        'All' => '🛍️',
-        'Phones' => '📱',
-        'Computers' => '💻',
-        'Audio' => '🎧',
-        'Mouse' => '🖱️',
-        'Keyboards' => '⌨️',
-    ];
     $search = $search ?? '';
 @endphp
 
@@ -68,17 +60,30 @@
                         <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
                             class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 mix-blend-multiply"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                        <div class="hidden w-full h-full items-center justify-center text-5xl">
-                            {{ $categoryIcons[$product->category->name ?? ''] ?? '📦' }}
+                        <div class="hidden w-full h-full items-center justify-center">
+                            @if($product->category && $product->category->icon && str_contains($product->category->icon, 'images/category/'))
+                                <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}" 
+                                     alt="{{ $product->category->name }}" 
+                                     class="w-20 h-20 opacity-20 object-contain">
+                            @else
+                                <span class="text-5xl opacity-20">{{ $product->category->icon ?? '📦' }}</span>
+                            @endif
                         </div>
                     @else
-                        <div class="flex w-full h-full items-center justify-center text-5xl">
-                            {{ $categoryIcons[$product->category->name ?? ''] ?? '📦' }}
+                        <div class="flex w-full h-full items-center justify-center">
+                            @if($product->category && $product->category->icon && str_contains($product->category->icon, 'images/category/'))
+                                <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}" 
+                                     alt="{{ $product->category->name }}" 
+                                     class="w-20 h-20 opacity-20 object-contain">
+                            @else
+                                <span class="text-5xl opacity-20">{{ $product->category->icon ?? '📦' }}</span>
+                            @endif
                         </div>
                     @endif
 
                     @auth
-                        <button onclick="event.stopPropagation(); if(typeof addToCart === 'function') addToCart({{ $product->id }})"
+                        <button
+                            onclick="event.stopPropagation(); if(typeof addToCart === 'function') addToCart({{ $product->id }})"
                             class="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-blue-600 hover:scale-110 active:scale-90"
                             aria-label="Add to cart">
                             <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
@@ -103,7 +108,8 @@
 
                     <div class="mt-3 flex items-center justify-between">
                         <p class="text-[15px] font-bold text-gray-900">${{ number_format($product->price, 2) }}</p>
-                        <span class="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">Stock: {{ $product->stock ?? '0' }}</span>
+                        <span class="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-md">Stock:
+                            {{ $product->stock ?? '0' }}</span>
                     </div>
                 </div>
             </div>

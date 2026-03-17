@@ -226,16 +226,16 @@ class ProductSeeder extends Seeder
 
     // Seed simple categories
     $icons = [
-        'Phones'    => '📱',
-        'Computers' => '💻',
-        'Audio'     => '🎧',
-        'Mouse'     => '🖱️',
-        'Keyboards' => '⌨️',
+        'Phones'    => 'public/images/category/cat_smartphone.png',
+        'Computers' => 'public/images/category/cat_laptop.png',
+        'Audio'     => 'public/images/category/cat_headphones.png',
+        'Mouse'     => 'public/images/category/cat_mouse.png',
+        'Keyboards' => 'public/images/category/cat_keyboard.png',
     ];
 
     $categoryMap = [];
     foreach ($icons as $name => $icon) {
-        $cat = \App\Models\Category::firstOrCreate(['name' => $name], ['icon' => $icon]);
+        $cat = \App\Models\Category::updateOrCreate(['name' => $name], ['icon' => $icon]);
         $categoryMap[$name] = $cat->id;
     }
 

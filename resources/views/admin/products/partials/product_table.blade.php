@@ -55,7 +55,15 @@
 
         {{-- Category --}}
         <td class="px-4 py-3 text-center">
-            <span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-semibold">
+            <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-semibold">
+                @if($product->category && $product->category->icon)
+                    @if(str_contains($product->category->icon, 'images/category/'))
+                        <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}" 
+                             alt="" class="w-3.5 h-3.5 object-contain">
+                    @else
+                        <span>{{ $product->category->icon }}</span>
+                    @endif
+                @endif
                 {{ $product->category->name ?? 'Uncategorized' }}
             </span>
         </td>

@@ -22,11 +22,11 @@ class UserController extends Controller
         $search     = trim($request->query('search', ''));
         $date       = $request->query('date', '');
         
-        // Cache category names for 1 hour to avoid repeated DB hits
-        $categories = Cache::remember('category_names_list', 3600, function () {
-            $names = Category::pluck('name')->toArray();
-            array_unshift($names, 'All');
-            return $names;
+        // Cache category list for 1 hour to avoid repeated DB hits
+        $categories = Cache::remember('category_list_with_icons', 3600, function () {
+            $list = Category::select('name', 'icon')->get()->toArray();
+            array_unshift($list, ['name' => 'All', 'icon' => '🛍️']); // Keep emoji for All
+            return $list;
         });
 
         $query = Product::with('category');

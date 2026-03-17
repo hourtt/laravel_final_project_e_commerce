@@ -73,10 +73,13 @@
                     data-category-id="{{ $category->id }}"
                     class="category-chip whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2
                     {{ $categoryId == $category->id ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
-                    @if ($category->icon)
-                        <span>{!! $category->icon !!}</span>
+                    @if ($category->icon && str_contains($category->icon, 'images/category/'))
+                        <img src="{{ asset(str_replace('public/', '', $category->icon)) }}" 
+                             alt="{{ $category->name }}" 
+                             class="w-4 h-4 object-contain"
+                             onerror="this.onerror=null; this.parentElement.innerHTML='📁'">
                     @else
-                        <span>📁</span>
+                        <span>{{ $category->icon ?? '📁' }}</span>
                     @endif
                     {{ $category->name }}
                 </button>

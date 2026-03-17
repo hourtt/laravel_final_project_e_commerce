@@ -2,11 +2,15 @@
 
     @php
         $categoryColors = [
-            'Phones' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-600', 'dot' => 'bg-rose-500', 'icon' => '📱'],
-            'Computers' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'dot' => 'bg-blue-500', 'icon' => '💻'],
-            'Audio' => ['bg' => 'bg-violet-50', 'text' => 'text-violet-600', 'dot' => 'bg-violet-500', 'icon' => '🎧'],
-            'Mouse' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'dot' => 'bg-green-500', 'icon' => '🖱️'],
-            'Keyboards' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-600', 'dot' => 'bg-amber-500', 'icon' => '⌨️'],
+            'Phones' => [
+                'bg' => 'bg-rose-50',
+                'text' => 'text-rose-600',
+                'dot' => 'bg-rose-500',
+            ],
+            'Computers' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'dot' => 'bg-blue-500'],
+            'Audio' => ['bg' => 'bg-violet-50', 'text' => 'text-violet-600', 'dot' => 'bg-violet-500'],
+            'Mouse' => ['bg' => 'bg-green-50', 'text' => 'text-green-600', 'dot' => 'bg-green-500'],
+            'Keyboards' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-600', 'dot' => 'bg-amber-500'],
         ];
     @endphp
 
@@ -130,7 +134,10 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @forelse($recentProducts as $product)
-                            @php $clr = $categoryColors[$product->category->name ?? ''] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'dot' => 'bg-gray-400', 'icon' => '📦']; @endphp
+                            @php 
+                                $clr = $categoryColors[$product->category->name ?? ''] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'dot' => 'bg-gray-400'];
+                                $catIcon = $product->category->icon ?? '📦';
+                            @endphp
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center gap-3">
@@ -140,7 +147,13 @@
                                         @else
                                             <div
                                                 class="w-10 h-10 {{ $clr['bg'] }} rounded-lg flex items-center justify-center text-lg flex-shrink-0">
-                                                {{ $clr['icon'] }}
+                                                @if(str_contains($catIcon, 'images/category/'))
+                                                    <img src="{{ asset(str_replace('public/', '', $catIcon)) }}" 
+                                                         alt="{{ $product->category->name ?? '' }}" 
+                                                         class="w-6 h-6 object-contain">
+                                                @else
+                                                    {{ $catIcon }}
+                                                @endif
                                             </div>
                                         @endif
                                         <div>
@@ -246,11 +259,20 @@
                 </div>
                 <div class="p-5 space-y-3">
                     @foreach ($categoryStats as $stat)
-                        @php $clr = $categoryColors[$stat->name] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'dot' => 'bg-gray-400', 'icon' => '📦']; @endphp
+                        @php 
+                            $clr = $categoryColors[$stat->name] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'dot' => 'bg-gray-400'];
+                            $catIcon = $stat->icon ?? '📦';
+                        @endphp
                         <div class="flex items-center gap-3">
                             <div
                                 class="w-9 h-9 {{ $clr['bg'] }} rounded-xl flex items-center justify-center text-lg flex-shrink-0">
-                                {{ $clr['icon'] }}
+                                @if(str_contains($catIcon, 'images/category/'))
+                                    <img src="{{ asset(str_replace('public/', '', $catIcon)) }}" 
+                                         alt="{{ $stat->name }}" 
+                                         class="w-5 h-5 object-contain">
+                                @else
+                                    {{ $catIcon }}
+                                @endif
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between mb-1">

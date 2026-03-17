@@ -152,6 +152,46 @@
 
             <!-- Sidebar Navigation Layout -->
             <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Session Alerts -->
+                @if (session('status') || session('error') || $errors->any())
+                    <div class="fixed top-4 right-4 z-50 max-w-md w-full animate-fade-in-down" x-data="{ show: true }"
+                        x-show="show" x-init="setTimeout(() => show = false, 5000)">
+                        @if (session('status'))
+                            <div
+                                class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3">
+                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span
+                                    class="text-sm font-bold">{{ session('status') === 'profile-image-updated' ? 'Image updated!' : session('status') }}</span>
+                            </div>
+                        @endif
+                        @if (session('error'))
+                            <div
+                                class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3">
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-sm font-bold">{{ session('error') }}</span>
+                            </div>
+                        @endif
+                        @if ($errors->any())
+                            <div
+                                class="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-2xl shadow-lg">
+                                <ul class="list-disc list-inside text-xs font-medium">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <!-- Left Column: Navigation Menu -->
                 <div class="w-full lg:w-72 space-y-2">
                     <button @click="activeTab = 'profiles'"

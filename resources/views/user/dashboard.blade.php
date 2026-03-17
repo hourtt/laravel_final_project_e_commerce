@@ -69,79 +69,77 @@
     {{-- ============================================================= --}}
     {{-- CATEGORY FILTER + PRODUCT GRID (Alpine.js Powered) --}}
     {{-- ============================================================= --}}
-    <section id="products-section" 
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14"
-        x-data="{
-            activeCategory: '{{ $category }}',
-            activeSearch: '{{ addslashes($search ?? '') }}',
-            activeDate: '{{ $date ?? '' }}',
-            isLoading: false,
-            loadingCategory: '',
-            
-            async fetchProducts() {
+    <section id="products-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14" x-data="{
+        activeCategory: '{{ $category }}',
+        activeSearch: '{{ addslashes($search ?? '') }}',
+        activeDate: '{{ $date ?? '' }}',
+        isLoading: false,
+        loadingCategory: '',
+    
+        async fetchProducts() {
+            this.isLoading = true;
+    
+            const params = new URLSearchParams();
+            if (this.activeCategory && this.activeCategory !== 'All') params.set('category', this.activeCategory);
+            if (this.activeSearch) params.set('search', this.activeSearch);
+            if (this.activeDate) params.set('date', this.activeDate);
+    
+            const url = `{{ route('home') }}?${params.toString()}`;
+    
+            try {
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await response.text();
+                document.getElementById('product-grid-container').innerHTML = html;
+    
+                // Update URL
+                history.pushState({}, '', url);
+    
+            } catch (error) {
+                console.error('Fetch error:', error);
+            } finally {
+                this.isLoading = false;
+                this.loadingCategory = '';
+            }
+        },
+    
+        filter(category) {
+            this.activeCategory = category;
+            this.loadingCategory = category;
+            this.fetchProducts();
+        },
+    
+        search(query) {
+            this.activeSearch = query;
+            this.fetchProducts();
+        },
+    
+        dateChanged(date) {
+            this.activeDate = date;
+            this.fetchProducts();
+        },
+    
+        async handlePagination(event) {
+            if (event.target.tagName === 'A' && event.target.href) {
+                event.preventDefault();
                 this.isLoading = true;
-                
-                const params = new URLSearchParams();
-                if (this.activeCategory && this.activeCategory !== 'All') params.set('category', this.activeCategory);
-                if (this.activeSearch) params.set('search', this.activeSearch);
-                if (this.activeDate) params.set('date', this.activeDate);
-                
-                const url = `{{ route('home') }}?${params.toString()}`;
-                
                 try {
-                    const response = await fetch(url, {
+                    const response = await fetch(event.target.href, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     const html = await response.text();
                     document.getElementById('product-grid-container').innerHTML = html;
-                    
-                    // Update URL
-                    history.pushState({}, '', url);
-                    
+                    history.pushState({}, '', event.target.href);
+                    window.scrollTo({ top: document.getElementById('products-section').offsetTop - 100, behavior: 'smooth' });
                 } catch (error) {
-                    console.error('Fetch error:', error);
+                    console.error('Pagination error:', error);
                 } finally {
                     this.isLoading = false;
-                    this.loadingCategory = '';
-                }
-            },
-
-            filter(category) {
-                this.activeCategory = category;
-                this.loadingCategory = category;
-                this.fetchProducts();
-            },
-
-            search(query) {
-                this.activeSearch = query;
-                this.fetchProducts();
-            },
-
-            dateChanged(date) {
-                this.activeDate = date;
-                this.fetchProducts();
-            },
-
-            async handlePagination(event) {
-                if (event.target.tagName === 'A' && event.target.href) {
-                    event.preventDefault();
-                    this.isLoading = true;
-                    try {
-                        const response = await fetch(event.target.href, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        const html = await response.text();
-                        document.getElementById('product-grid-container').innerHTML = html;
-                        history.pushState({}, '', event.target.href);
-                        window.scrollTo({ top: document.getElementById('products-section').offsetTop - 100, behavior: 'smooth' });
-                    } catch (error) {
-                        console.error('Pagination error:', error);
-                    } finally {
-                        this.isLoading = false;
-                    }
                 }
             }
-        }"
+        }
+    }"
         @date-changed.window="dateChanged($event.detail.date)"
         @popstate.window="
             const params = new URLSearchParams(window.location.search);
@@ -156,14 +154,21 @@
                     document.getElementById('product-grid-container').innerHTML = h;
                 })
                 .finally(() => this.isLoading = false);
-        "
-    >
+        ">
 
         <style>
             @keyframes fade-up {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
+
             .animate-fade-up {
                 animation: fade-up 0.5s ease-out forwards;
             }
@@ -172,11 +177,13 @@
         <!-- Section Header -->
         <div class="mb-8 text-center" :class="{ 'opacity-40 blur-[1px]': isLoading }">
             <h2 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Our Products</h2>
-            <p class="text-gray-500 mt-2 text-sm">Browse our full collection — search or filter by category and date.</p>
+            <p class="text-gray-500 mt-2 text-sm">Browse our full collection — search or filter by category and date.
+            </p>
         </div>
 
         {{-- FILTERS BAR (Search + Date) --}}
-        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-7" :class="{ 'opacity-40 blur-[1px]': isLoading }">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-7"
+            :class="{ 'opacity-40 blur-[1px]': isLoading }">
             {{-- SEARCH BAR --}}
             <div class="relative w-full max-w-xl group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -188,11 +195,8 @@
                     </svg>
                 </div>
 
-                <input type="text"
-                    placeholder="Search products…" 
-                    autocomplete="off"
-                    x-model.debounce.500ms="activeSearch"
-                    @input="search(activeSearch)"
+                <input type="text" placeholder="Search products…" autocomplete="off"
+                    x-model.debounce.500ms="activeSearch" @input="search(activeSearch)"
                     class="w-full pl-12 pr-12 py-3.5 rounded-2xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400
                            shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
                            transition-all duration-200" />
@@ -217,30 +221,42 @@
         <div class="flex flex-wrap items-center justify-center gap-2 mb-10">
             @foreach ($categories as $cat)
                 @php
-                    $icons = [
-                        'All' => '🛍️', 'Phones' => '📱', 'Computers' => '💻', 
-                        'Audio' => '🎧', 'Mouse' => '🖱️', 'Keyboards' => '⌨️'
-                    ];
+                    $isAll = $cat['name'] === 'All';
+                    $iconPath = $cat['icon'] ?? '📦';
+                    // Strip 'public/' from start if exists for asset() helper
+                    $displayIcon = !$isAll && str_contains($iconPath, 'images/category/') 
+                        ? asset(str_replace('public/', '', $iconPath)) 
+                        : null;
                 @endphp
-                <button type="button" 
-                    @click="filter('{{ $cat }}')"
+                <button type="button" @click="filter('{{ $cat['name'] }}')"
                     class="relative h-[48px] min-w-[120px] inline-flex items-center justify-center gap-1.5 px-6
                            rounded-full text-sm font-semibold border transition-all duration-300
                            active:scale-95 disabled:opacity-70"
-                    :class="activeCategory === '{{ $cat }}'
-                           ? 'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-500/25' 
-                           : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-600'"
-                    :disabled="isLoading"
-                >
-                    <span :class="{ 'opacity-0': isLoading && loadingCategory === '{{ $cat }}' }">
-                        {{ $icons[$cat] ?? '📦' }} {{ $cat }}
+                    :class="activeCategory === '{{ $cat['name'] }}'
+                        ?
+                        'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-500/25' :
+                        'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-600'"
+                    :disabled="isLoading">
+                    <span :class="{ 'opacity-0': isLoading && loadingCategory === '{{ $cat['name'] }}' }" class="flex items-center gap-2">
+                        @if($displayIcon)
+                            <img src="{{ $displayIcon }}" alt="{{ $cat['name'] }}" 
+                                 class="w-6 h-6 object-contain" 
+                                 onerror="this.onerror=null; this.parentElement.innerHTML='📦 {{ $cat['name'] }}'">
+                        @else
+                            {{ $cat['icon'] ?? '📦' }}
+                        @endif
+                        {{ $cat['name'] }}
                     </span>
-                    
-                    <template x-if="isLoading && loadingCategory === '{{ $cat }}'">
+
+                    <template x-if="isLoading && loadingCategory === '{{ $cat['name'] }}'">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                         </div>
                     </template>
@@ -249,11 +265,8 @@
         </div>
 
         <!-- Product Grid Container -->
-        <div id="product-grid-container" 
-            @click="handlePagination($event)"
-            class="transition-all duration-500"
-            :class="{ 'opacity-40 blur-[1px] pointer-events-none': isLoading }"
-        >
+        <div id="product-grid-container" @click="handlePagination($event)" class="transition-all duration-500"
+            :class="{ 'opacity-40 blur-[1px] pointer-events-none': isLoading }">
             @include('user.partials.product-grid')
         </div>
 

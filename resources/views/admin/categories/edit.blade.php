@@ -16,7 +16,7 @@
                         required>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Icon Emoji</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Icon (Emoji or Image Path)</label>
                     <input type="text" name="icon" value="{{ old('icon', $category->icon) }}"
                         class="w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 shadow-sm">
                 </div>
