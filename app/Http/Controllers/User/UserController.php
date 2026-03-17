@@ -112,9 +112,7 @@ class UserController extends Controller
     }
 
 
-    //
-     * Add to cart (AJAX)
-     */
+    //Add to cart (AJAX)
     public function addToCart(Request $request)
     {
         $productId = $request->input('product_id');
@@ -149,9 +147,7 @@ class UserController extends Controller
         ]);
     }
 
-    //
-     * Update cart quantity (AJAX)
-     */
+    //Update cart quantity (AJAX)
     public function updateCart(Request $request)
     {
         $productId = $request->input('product_id');
@@ -225,9 +221,7 @@ class UserController extends Controller
         ]);
     }
 
-    //
-     * Remove single item from cart
-     */
+    //Remove single item from car
  public function removeFromCart(Request $request, $id)
     {
         $product = Product::find($id);
@@ -243,9 +237,7 @@ class UserController extends Controller
         
         return redirect()->route('checkout')->with('success', "{$productName} removed from cart.");
     }
-    //
-     * User's own order history.
-     */
+    //User's own order history
     public function orders(Request $request)
     {
         $orders = auth()->user()
@@ -257,9 +249,7 @@ class UserController extends Controller
         return view('user.orders', compact('orders'));
     }
 
-    //
-     * User's single order detail.
-     */
+    // User's single order detail
     public function orderShow($id)
     {
         $order = auth()->user()
@@ -270,14 +260,11 @@ class UserController extends Controller
         return view('user.orders-show', compact('order'));
     }
 
-    //
-     * Sync the current user's Pending order (tracked via session 'order_id')
-     * with the current cart session, so order history always reflects the
-     * latest quantities and products — not stale data from a previous page load.
-     *
-     * Called from updateCart() and removeFromCart() so any cart change
-     * is immediately reflected in the pending order.
-     */
+    // Sync the current user's Pending order (tracked via session 'order_id')
+    // with the current cart session, so order history always reflects the
+    // latest quantities and products — not stale data from a previous page load.
+    // Called from updateCart() and removeFromCart() so any cart change
+    // is immediately reflected in the pending order.
     private function syncPendingOrder(): void
     {
         $orderId = session('order_id');
