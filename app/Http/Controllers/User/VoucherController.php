@@ -16,159 +16,147 @@ class VoucherController extends Controller
     public function apply(Request $request)
     {
         $request->validate([
-            'code' => 'required|string|max:50',
+            'code'       => 'required|string|max:50',
+            'product_id' => 'nullable|integer|exists:products,id',
         ]);
 
-        $code = strtoupper(trim($request->code));
-        $voucher = Voucher::where('code', $code)->first();
+        $code      = strtoupper(trim($request->code));
+        $voucher   = Voucher::where('code', $code)->first();
+        $productId = $request->product_id;
 
-        // 1. Existence: Verify if the voucher code exists
+        // 1. Existence
         if (!$voucher) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid voucher code.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Invalid voucher code.'], 422);
         }
 
-        // 2. Status: Check if active
-        if (!$voucher->status) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This voucher is currently inactive.',
-            ], 422);
+        // 2. Status & Expiry & Usage limit (Model-based validation)
+        // Load the targeted product
+        $product = $productId ? Product::find($productId) : null;
+        $result  = $voucher->isValid($product);
+        if (!$result['valid']) {
+            return response()->json(['success' => false, 'message' => $result['message']], 422);
         }
 
-        // 3. Expiry: Check if current date is within valid range
-        if ($voucher->expires_at && $voucher->expires_at->isPast()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Voucher expired',
-            ], 422);
-        }
-
-        // 4. Usage Rule: Prevent duplicate usage per product
+        // 3. Cart context check
         $cart = session()->get('cart', []);
         if (empty($cart)) {
             return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
         }
 
+        if ($productId && !isset($cart[$productId])) {
+            return response()->json(['success' => false, 'message' => 'This product is not in your cart.'], 422);
+        }
+
+        // 4. Usage Rule: Prevent duplicate usage of SAME voucher in past orders
         $userId = auth()->id();
         if ($userId) {
-            foreach ($cart as $productId => $cartItem) {
-                // If this voucher applies to this specific product (either tied or general)
-                if ($voucher->product_id === null || (int)$voucher->product_id === (int)$productId) {
-                    
-                    // Check order_items to see if the user has already used this voucher for this product
-                    $alreadyUsed = OrderItem::where('product_id', $productId)
-                        ->where('voucher_code', $voucher->code)
-                        ->whereHas('order', function ($query) use ($userId) {
-                            $query->where('user_id', $userId);
-                        })
-                        ->exists();
+            $alreadyUsed = OrderItem::where('voucher_code', $voucher->code)
+                ->whereHas('order', function ($query) use ($userId) {
+                    $query->where('user_id', $userId)->where('status', 'Completed');
+                })
+                ->exists();
 
-                    if ($alreadyUsed) {
-                        $product = Product::find($productId);
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'You have already used this voucher for ' . ($product->name ?? 'this product'),
-                        ], 422);
-                    }
-                }
-            }
-        }
-
-        // 5. Product-specific scope check (is the tied product in cart?)
-        $matchedProductId = null;
-        if ($voucher->product_id !== null) {
-            $cartProductIds = array_map('intval', array_keys($cart));
-            if (!in_array((int) $voucher->product_id, $cartProductIds, true)) {
+            if ($alreadyUsed) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This voucher is only valid for "' . ($voucher->product->name ?? 'a specific product') . '".',
+                    'message' => 'You have already used this voucher code in a previous order.',
                 ], 422);
             }
-            $matchedProductId = (int) $voucher->product_id;
         }
 
-        // 6. Final model-based validation (e.g. usage_limit)
-        $result = $voucher->isValid($matchedProductId);
-        if (!$result['valid']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-            ], 422);
-        }
-
-        // Recalculate totals from DB
-        $productIds = array_keys($cart);
-        $products   = Product::whereIn('id', $productIds)->get()->keyBy('id');
-        $subtotal   = 0;
-        $discountableSubtotal = 0;
-
-        foreach ($cart as $productId => $cartItem) {
-            if (isset($products[$productId])) {
-                $itemTotal = $products[$productId]->price * $cartItem['quantity'];
-                $subtotal += $itemTotal;
-                
-                if ($voucher->product_id === null || $voucher->product_id == $productId) {
-                    $discountableSubtotal += $itemTotal;
-                }
+        // 5. Prevent using the same voucher code multiple times in the SAME session
+        $appliedVouchers = session()->get('applied_vouchers', []);
+        foreach ($appliedVouchers as $pId => $data) {
+            if ($data['code'] === $voucher->code) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This voucher is already applied to this order.',
+                ], 422);
             }
         }
-
-        $discountAmount = $voucher->calculateDiscount($discountableSubtotal);
-        $finalTotal     = $subtotal - $discountAmount;
-
-        if ($finalTotal <= 0) {
-            return response()->json([
+        
+        // 6. Prevent multiple vouchers on the SAME product (one voucher per item line)
+        if ($productId && isset($appliedVouchers[$productId])) {
+             return response()->json([
                 'success' => false,
-                'message' => 'Vouchers cannot be used to reduce the order total to $0.00.',
+                'message' => 'A voucher is already applied to this product.',
             ], 422);
         }
 
+        // 7. Calculate Discount
+        // If it's a shop-wide voucher (no product_id/category_id), apply to the specific item clicked
+        // Or if it's tied to product/category, apply to THAT item.
+        // If no product_id was sent (legacy), we apply to the whole cart? 
+        // For this refactor, we assume product_id is sent from the per-item UI.
+        if (!$productId) {
+            return response()->json(['success' => false, 'message' => 'Please apply the voucher to a specific product.'], 422);
+        }
+
+        $itemQty   = $cart[$productId]['quantity'];
+        $itemTotal = $product->price * $itemQty;
+        $discountAmount = $voucher->calculateDiscount($itemTotal);
+
         // Store in session
-        session([
-            'voucher_code'     => $voucher->code,
-            'voucher_id'       => $voucher->id,
-            'voucher_discount' => $discountAmount,
-        ]);
+        $appliedVouchers[$productId] = [
+            'id'       => $voucher->id,
+            'code'     => $voucher->code,
+            'discount' => $discountAmount,
+        ];
+        session(['applied_vouchers' => $appliedVouchers]);
+
+        // Recalculate totals for response
+        $totalSubtotal = 0;
+        foreach ($cart as $id => $item) {
+            $p = Product::find($id);
+            if ($p) $totalSubtotal += $p->price * $item['quantity'];
+        }
+
+        $totalDiscount = array_sum(array_column($appliedVouchers, 'discount'));
+        $finalTotal    = max(0, $totalSubtotal - $totalDiscount);
 
         return response()->json([
-            'success'          => true,
-            'message'          => 'Voucher applied successfully. Discount: $' . number_format($discountAmount, 2),
-            'voucher_code'     => $voucher->code,
-            'discount_type'    => $voucher->discount_type,
-            'discount_value'   => $voucher->discount_value,
-            'discount_amount'  => round($discountAmount, 2),
-            'subtotal'         => round($subtotal, 2),
-            'final_total'      => round($finalTotal, 2),
+            'success'         => true,
+            'message'         => 'Voucher applied to ' . $product->name,
+            'voucher_code'    => $voucher->code,
+            'item_id'         => $productId,
+            'discount_amount' => round($discountAmount, 2),
+            'total_discount'  => round($totalDiscount, 2),
+            'subtotal'        => round($totalSubtotal, 2),
+            'final_total'     => round($finalTotal, 2),
+            'applied_vouchers'=> $appliedVouchers,
         ]);
     }
 
     /**
-     * AJAX: Remove the currently applied voucher from session.
+     * AJAX: Remove a specific voucher.
      */
     public function remove(Request $request)
     {
-        session()->forget(['voucher_code', 'voucher_id', 'voucher_discount']);
+        $productId = $request->product_id;
+        $appliedVouchers = session()->get('applied_vouchers', []);
 
-        $cart = session()->get('cart', []);
-        $productIds = array_keys($cart);
-        $products   = Product::whereIn('id', $productIds)->get()->keyBy('id');
-        $subtotal   = 0;
-
-        foreach ($cart as $productId => $cartItem) {
-            if (isset($products[$productId])) {
-                $subtotal += $products[$productId]->price * $cartItem['quantity'];
-            }
+        if (isset($appliedVouchers[$productId])) {
+            unset($appliedVouchers[$productId]);
+            session(['applied_vouchers' => $appliedVouchers]);
         }
 
+        // Recalculate
+        $cart = session()->get('cart', []);
+        $totalSubtotal = 0;
+        foreach ($cart as $id => $item) {
+            $p = Product::find($id);
+            if ($p) $totalSubtotal += $p->price * $item['quantity'];
+        }
+
+        $totalDiscount = array_sum(array_column($appliedVouchers, 'discount'));
+        $finalTotal    = max(0, $totalSubtotal - $totalDiscount);
+
         return response()->json([
-            'success'       => true,
-            'message'       => 'Voucher removed.',
-            'final_total'   => round($subtotal, 2),
-            'subtotal'      => round($subtotal, 2),
-            'discount_amount' => 0,
+            'success'        => true,
+            'message'        => 'Voucher removed.',
+            'total_discount' => round($totalDiscount, 2),
+            'subtotal'       => round($totalSubtotal, 2),
+            'final_total'    => round($finalTotal, 2),
         ]);
     }
 }

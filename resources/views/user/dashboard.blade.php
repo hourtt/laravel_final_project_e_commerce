@@ -210,13 +210,13 @@
                     </svg>
                 </button>
             </div>
-
-            {{-- DATE FILTER --}}
-            <div class="w-full md:w-auto">
-                <x-date-filter />
-            </div>
         </div>
 
+        {{-- CATEGORY FILTER BAR --}}
+        <div class="mb-8 text-center" :class="{ 'opacity-40 blur-[1px]': isLoading }">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Search by category</h2>
+        </div>
+        
         {{-- CATEGORY FILTER BAR --}}
         <div class="flex flex-wrap items-center justify-center gap-2 mb-10">
             @foreach ($categories as $cat)
@@ -224,9 +224,10 @@
                     $isAll = $cat['name'] === 'All';
                     $iconPath = $cat['icon'] ?? '📦';
                     // Strip 'public/' from start if exists for asset() helper
-                    $displayIcon = !$isAll && str_contains($iconPath, 'images/category/') 
-                        ? asset(str_replace('public/', '', $iconPath)) 
-                        : null;
+                    $displayIcon =
+                        !$isAll && str_contains($iconPath, 'images/category/')
+                            ? asset(str_replace('public/', '', $iconPath))
+                            : null;
                 @endphp
                 <button type="button" @click="filter('{{ $cat['name'] }}')"
                     class="relative h-[48px] min-w-[120px] inline-flex items-center justify-center gap-1.5 px-6
@@ -237,11 +238,11 @@
                         'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-500/25' :
                         'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-600'"
                     :disabled="isLoading">
-                    <span :class="{ 'opacity-0': isLoading && loadingCategory === '{{ $cat['name'] }}' }" class="flex items-center gap-2">
-                        @if($displayIcon)
-                            <img src="{{ $displayIcon }}" alt="{{ $cat['name'] }}" 
-                                 class="w-6 h-6 object-contain" 
-                                 onerror="this.onerror=null; this.parentElement.innerHTML='📦 {{ $cat['name'] }}'">
+                    <span :class="{ 'opacity-0': isLoading && loadingCategory === '{{ $cat['name'] }}' }"
+                        class="flex items-center gap-2">
+                        @if ($displayIcon)
+                            <img src="{{ $displayIcon }}" alt="{{ $cat['name'] }}" class="w-6 h-6 object-contain"
+                                onerror="this.onerror=null; this.parentElement.innerHTML='📦 {{ $cat['name'] }}'">
                         @else
                             {{ $cat['icon'] ?? '📦' }}
                         @endif

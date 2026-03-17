@@ -20,18 +20,21 @@
     let _prevTotal = {{ $finalTotal ?? ($discountedTotal ?? ($total ?? 0)) }};
 
     /*──────────────────────────────────────────────────────────────────
-     |  VOUCHER SYSTEM
-     ──────────────────────────────────────────────────────────────────*/
-    // product_ids no longer sent — server reads cart from session directly
+    |  VOUCHER SYSTEM (Multiple / Per-Item)
+    |  ─────────────────────────────────────
+    |  Supports applying a unique voucher code to each product row.
+    ──────────────────────────────────────────────────────────────────*/
 
-    function applyVoucher() {
-        const codeEl = document.getElementById('voucher-input');
-        const errEl = document.getElementById('voucher-error');
-        const applyBtn = document.getElementById('voucher-apply-btn');
+    function applyVoucher(productId = null) {
+        if (!productId) return;
+
+        const codeEl = document.getElementById('voucher-input-' + productId);
+        const errEl = document.getElementById('voucher-error-' + productId);
+        const applyBtn = document.getElementById('voucher-apply-btn-' + productId);
         const code = codeEl.value.trim().toUpperCase();
 
         if (!code) {
-            errEl.textContent = 'Please enter a voucher code.';
+            errEl.textContent = 'Enter your voucher code';
             errEl.classList.remove('hidden');
             return;
         }
@@ -48,31 +51,38 @@
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify({
-                    code
+                    code,
+                    product_id: productId
                 }),
             })
             .then(async res => {
                 const data = await res.json();
+                applyBtn.disabled = false;
+                applyBtn.textContent = 'Apply';
+
                 if (!res.ok || !data.success) {
-                    errEl.textContent = data.message || 'Invalid voucher code.';
+                    errEl.textContent = data.message || 'Invalid.';
                     errEl.classList.remove('hidden');
-                    applyBtn.disabled = false;
-                    applyBtn.textContent = 'Apply';
                     return;
                 }
 
-                // Show applied badge, hide input row
-                applyBtn.disabled = false;
-                applyBtn.textContent = 'Apply';
-                document.getElementById('voucher-input-row').style.display = 'none';
-                document.getElementById('voucher-applied-row').style.display = 'flex';
-                document.getElementById('applied-code-label').textContent = data.voucher_code;
+                // UI: Update Item Row
+                document.getElementById('voucher-input-row-' + productId).style.display = 'none';
+                document.getElementById('voucher-applied-row-' + productId).style.display = 'flex';
+                document.getElementById('applied-code-label-' + productId).textContent = data.voucher_code;
 
-                // Show discount row
+                const discountLabel = document.getElementById('voucher-discount-label-' + productId);
+                discountLabel.textContent = '-$' + data.discount_amount.toFixed(2) + ' discount';
+                discountLabel.classList.remove('hidden');
+
+                // UI: Update Order Summary
                 const discountRow = document.getElementById('discount-row');
                 const discountDisplay = document.getElementById('discount-display');
-                discountRow.style.display = 'flex';
-                discountDisplay.textContent = '-$' + data.discount_amount.toFixed(2) + ' USD';
+
+                if (data.total_discount > 0) {
+                    discountRow.style.display = 'flex';
+                    discountDisplay.textContent = '-$' + data.total_discount.toFixed(2) + ' USD';
+                }
 
                 // Update grand total odometer
                 const direction = data.final_total < _prevTotal ? 'down' : 'up';
@@ -80,16 +90,19 @@
                 _prevTotal = data.final_total;
 
                 showToast('🎉 ' + data.message, 'success');
+                codeEl.value = '';
             })
             .catch(() => {
-                errEl.textContent = 'A network error occurred. Please try again.';
+                errEl.textContent = 'Network error.';
                 errEl.classList.remove('hidden');
                 applyBtn.disabled = false;
                 applyBtn.textContent = 'Apply';
             });
     }
 
-    function removeVoucher() {
+    function removeVoucher(productId = null) {
+        if (!productId) return;
+
         fetch('{{ route('voucher.remove') }}', {
                 method: 'POST',
                 headers: {
@@ -97,25 +110,28 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                 },
+                body: JSON.stringify({
+                    product_id: productId
+                }),
             })
             .then(async res => {
                 const data = await res.json();
 
-                // Reset UI
-                document.getElementById('voucher-input-row').style.display = 'flex';
-                document.getElementById('voucher-applied-row').style.display = 'none';
-                document.getElementById('voucher-input').value = '';
+                // UI: Reset Item Row
+                document.getElementById('voucher-input-row-' + productId).style.display = 'flex';
+                document.getElementById('voucher-applied-row-' + productId).style.display = 'none';
+                document.getElementById('voucher-input-' + productId).value = '';
+                document.getElementById('voucher-discount-label-' + productId).classList.add('hidden');
 
-                // Reset the Apply button state specifically
-                const applyBtn = document.getElementById('voucher-apply-btn');
-                if (applyBtn) {
-                    applyBtn.disabled = false;
-                    applyBtn.textContent = 'Apply';
+                // UI: Update Order Summary
+                const discountRow = document.getElementById('discount-row');
+                const discountDisplay = document.getElementById('discount-display');
+
+                if (data.total_discount > 0) {
+                    discountDisplay.textContent = '-$' + data.total_discount.toFixed(2) + ' USD';
+                } else {
+                    discountRow.style.display = 'none';
                 }
-
-                // Hide discount row
-                document.getElementById('discount-row').style.display = 'none';
-                document.getElementById('discount-display').textContent = '-$0.00 USD';
 
                 // Restore grand total odometer
                 const direction = data.final_total > _prevTotal ? 'up' : 'down';
@@ -124,23 +140,13 @@
 
                 showToast('Voucher removed.', 'warning');
             })
-            .catch(() => showToast('Could not remove voucher. Please try again.', 'error'));
+            .catch(() => showToast('Could not remove voucher.', 'error'));
     }
 
-    // Allow pressing Enter in the voucher input
+    // Adjust keyboard listeners
     document.addEventListener('DOMContentLoaded', () => {
-        const input = document.getElementById('voucher-input');
-        if (input) {
-            input.addEventListener('keydown', e => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    applyVoucher();
-                }
-            });
-            input.addEventListener('input', () => {
-                input.value = input.value.toUpperCase();
-            });
-        }
+        // We use inline onkeydown in the blade, so no need for global listener here
+        // but we can keep the uppercase transform if needed.
     });
 
     /* ── button state ── */

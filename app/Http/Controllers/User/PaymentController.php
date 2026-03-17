@@ -38,12 +38,9 @@ class PaymentController extends Controller
         $voucherDiscount = 0.0;
         $voucherCode     = null;
         $discountedTotal = 0.0;
+        $appliedVouchers = [];
         $cartProductIds  = [];   // passed to view so checkout-script can send it via AJAX
         $hash = $tranId = $amount = $merchant_id = $req_time = $currency = $payment_option = $return_url = $continue_success_url = '';
-
-        // if (empty($cart)) {
-        //     return redirect()->route('dashboard')->with('error', 'Your cart is empty.');
-        // }
 
         if (!empty($cart)) {
             $productIds = array_keys($cart);
@@ -64,9 +61,15 @@ class PaymentController extends Controller
                 ];
             }
 
-            // Apply session voucher discount if any
-            $voucherDiscount = (float) session('voucher_discount', 0);
-            $voucherCode     = session('voucher_code');
+            // Apply session vouchers discount
+            $appliedVouchers = session()->get('applied_vouchers', []);
+            $voucherDiscount = 0.0;
+            foreach ($appliedVouchers as $pId => $data) {
+                // Ensure the voucher is still valid for the product in cart
+                if (isset($cart[$pId])) {
+                     $voucherDiscount += (float) $data['discount'];
+                }
+            }
             $discountedTotal = max(0, $total - $voucherDiscount);
 
             // Validation: Ensure order cannot be created with $0.00
@@ -113,16 +116,6 @@ class PaymentController extends Controller
                         ->whereNotIn('product_id', $cartProductIds)
                         ->delete();
 
-                    // Calculate which product gets the voucher discount
-                    $voucherProductId = null;
-                    if ($voucherCode) {
-                        $v = Voucher::where('code', $voucherCode)->first();
-                        // If it's a specific product, use that ID. Otherwise if it's a general voucher,
-                        // we can either apply it to everything or leave it null (meaning whole order). 
-                        // For clarity, we only mark order_items if the voucher is specifically tied to them.
-                        $voucherProductId = $v ? $v->product_id : null;
-                    }
-
                     // Add / update items that ARE in the cart
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
@@ -130,12 +123,9 @@ class PaymentController extends Controller
                         $itemVoucherCode = null;
                         $itemVoucherDiscount = null;
                         
-                        // If the voucher is specifically for this product OR it's a general voucher
-                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
-                             $itemVoucherCode = $voucherCode;
-                             // Assign the full discount to the product line if specific, or proportional if general?
-                             // Simplest representation: show the discount amount on the item line where applicable.
-                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        if (isset($appliedVouchers[$product->id])) {
+                             $itemVoucherCode = $appliedVouchers[$product->id]['code'];
+                             $itemVoucherDiscount = $appliedVouchers[$product->id]['discount'];
                         }
 
                         OrderItem::updateOrCreate(
@@ -150,10 +140,11 @@ class PaymentController extends Controller
                         );
                     }
 
-                    // Persist total + voucher info so admin can see which code was used
+                    // Persist total + voucher info (summary)
+                    $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
                     $order->update([
                         'total_price'      => $discountedTotal,
-                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_code'     => $voucherCodesStr ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
 
@@ -162,19 +153,14 @@ class PaymentController extends Controller
                 } else {
                     // ── No valid pending order — create a fresh one ──
                     DB::beginTransaction();
+                    $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
                     $order = Order::create([
                         'user_id'          => Auth::id(),
                         'total_price'      => $discountedTotal,
                         'status'           => 'Pending',
-                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_code'     => $voucherCodesStr ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
-                    // Calculate which product gets the voucher discount
-                    $voucherProductId = null;
-                    if ($voucherCode) {
-                        $v = Voucher::where('code', $voucherCode)->first();
-                        $voucherProductId = $v ? $v->product_id : null;
-                    }
 
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
@@ -182,9 +168,9 @@ class PaymentController extends Controller
                         $itemVoucherCode = null;
                         $itemVoucherDiscount = null;
                         
-                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
-                             $itemVoucherCode = $voucherCode;
-                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        if (isset($appliedVouchers[$product->id])) {
+                             $itemVoucherCode = $appliedVouchers[$product->id]['code'];
+                             $itemVoucherDiscount = $appliedVouchers[$product->id]['discount'];
                         }
                         
                         OrderItem::create([
@@ -229,7 +215,7 @@ class PaymentController extends Controller
             'cartProductIds',
             'total',
             'voucherDiscount',
-            'voucherCode',
+            'appliedVouchers',
             'discountedTotal',
             'hash',
             'tranId',
@@ -273,7 +259,13 @@ class PaymentController extends Controller
         }
 
         // ── Apply voucher discount ────────────────────────────────────────────
-        $voucherDiscount = (float) session('voucher_discount', 0);
+        $appliedVouchers = session('applied_vouchers', []);
+        $voucherDiscount = 0.0;
+        foreach ($appliedVouchers as $pId => $vData) {
+            if (isset($cart[$pId])) {
+                $voucherDiscount += (float) $vData['discount'];
+            }
+        }
         $discountedTotal = max(0, $total - $voucherDiscount);
 
         // Validation for AJAX: total must be > 0
@@ -309,23 +301,17 @@ class PaymentController extends Controller
                         ->whereNotIn('product_id', $cartProductIds)
                         ->delete();
 
-                    // Calculate which product gets the voucher discount
-                    $voucherProductId = null;
-                    if ($voucherCode) {
-                        $v = Voucher::where('code', $voucherCode)->first();
-                        $voucherProductId = $v ? $v->product_id : null;
-                    }
-
                     // Upsert current cart items
+                    $appliedVouchers = session('applied_vouchers', []);
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
                         
                         $itemVoucherCode = null;
                         $itemVoucherDiscount = null;
                         
-                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
-                             $itemVoucherCode = $voucherCode;
-                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        if (isset($appliedVouchers[$product->id])) {
+                             $itemVoucherCode = $appliedVouchers[$product->id]['code'];
+                             $itemVoucherDiscount = $appliedVouchers[$product->id]['discount'];
                         }
                         
                         OrderItem::updateOrCreate(
@@ -340,9 +326,10 @@ class PaymentController extends Controller
                         );
                     }
 
+                    $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
                     $order->update([
                         'total_price'      => $discountedTotal,
-                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_code'     => $voucherCodesStr ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
 
@@ -350,20 +337,16 @@ class PaymentController extends Controller
                     // ── No valid order in session — create a fresh one ────────
                     // This handles: page loaded without cart, session expired,
                     // or stale order_id pointing to a non-Pending / foreign order.
+                    $appliedVouchers = session('applied_vouchers', []);
+                    $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
+                    
                     $order = Order::create([
                         'user_id'          => Auth::id(),
                         'total_price'      => $discountedTotal,
                         'status'           => 'Pending',
-                        'voucher_code'     => $voucherCode ?: null,
+                        'voucher_code'     => $voucherCodesStr ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
                     ]);
-
-                    // Calculate which product gets the voucher discount
-                    $voucherProductId = null;
-                    if ($voucherCode) {
-                        $v = Voucher::where('code', $voucherCode)->first();
-                        $voucherProductId = $v ? $v->product_id : null;
-                    }
 
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
@@ -371,9 +354,9 @@ class PaymentController extends Controller
                         $itemVoucherCode = null;
                         $itemVoucherDiscount = null;
                         
-                        if ($voucherCode && ($voucherProductId === null || $voucherProductId === $product->id)) {
-                             $itemVoucherCode = $voucherCode;
-                             $itemVoucherDiscount = ($voucherProductId === $product->id) ? $voucherDiscount : null;
+                        if (isset($appliedVouchers[$product->id])) {
+                             $itemVoucherCode = $appliedVouchers[$product->id]['code'];
+                             $itemVoucherDiscount = $appliedVouchers[$product->id]['discount'];
                         }
 
                         OrderItem::create([
@@ -497,14 +480,16 @@ class PaymentController extends Controller
             }
         });
 
-        // Increment voucher used_count if one was applied
-        $voucherId = session('voucher_id');
-        if ($voucherId) {
-            $voucher = Voucher::find($voucherId);
-            if ($voucher) {
-                $voucher->incrementUsage();
+        // Increment voucher used_count for all applied vouchers
+        $appliedVouchers = session('applied_vouchers', []);
+        if (!empty($appliedVouchers)) {
+            foreach ($appliedVouchers as $data) {
+                $voucher = Voucher::find($data['id']);
+                if ($voucher) {
+                    $voucher->incrementUsage();
+                }
             }
-            session()->forget(['voucher_id', 'voucher_code', 'voucher_discount']);
+            session()->forget('applied_vouchers');
         }
     }
 

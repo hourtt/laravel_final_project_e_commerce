@@ -15,6 +15,7 @@ class Voucher extends Model
         'discount_type',
         'discount_value',
         'product_id',
+        'category_id',
         'usage_limit',
         'used_count',
         'expires_at',
@@ -45,6 +46,14 @@ class Voucher extends Model
     }
 
     /**
+     * Relationship: the specific category this voucher is tied to (nullable).
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
      * Generate a random uppercase voucher code.
      */
     public static function generateCode(int $length = 8): string
@@ -58,9 +67,9 @@ class Voucher extends Model
 
     /**
      * Check if the voucher is currently valid (active, not expired, usage not exceeded).
-     * Optionally pass a product_id to validate product-specific vouchers.
+     * Optionally pass a product to validate product-specific or category-specific vouchers.
      */
-    public function isValid(?int $productId = null): array
+    public function isValid(?Product $product = null): array
     {
         if (!$this->status) {
             return ['valid' => false, 'message' => 'This voucher code is inactive or has been expired.'];
@@ -75,11 +84,20 @@ class Voucher extends Model
         }
 
         // If tied to a specific product, check that the user is buying it
-        if ($this->product_id !== null && $productId !== null && $this->product_id !== $productId) {
-            return ['valid' => false, 'message' => 'This voucher code cannot be used for this product.'];
+        if ($this->product_id !== null) {
+            if (!$product || (int)$this->product_id !== (int)$product->id) {
+                return ['valid' => false, 'message' => 'This voucher code is only valid for "' . ($this->product->name ?? 'a specific product') . '".'];
+            }
         }
 
-        return ['valid' => true, 'message' => 'Voucher applied successfully!'];
+        // If tied to a specific category, check that the product belongs to it
+        if ($this->category_id !== null) {
+            if (!$product || (int)$this->category_id !== (int)$product->category_id) {
+                return ['valid' => false, 'message' => 'This voucher code is only valid for products in the "' . ($this->category->name ?? 'specific category') . '" category.'];
+            }
+        }
+
+        return ['valid' => true, 'message' => 'Voucher valid!'];
     }
 
     /**

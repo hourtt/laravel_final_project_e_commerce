@@ -1,4 +1,5 @@
  <h1 class="text-3xl font-bold text-gray-900 mb-8 tracking-tight">Shopping Cart</h1>
+ @php $appliedVouchers = $appliedVouchers ?? []; @endphp
  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
      {{-- ═══════════════════════════════════════
                 LEFT COLUMN — Cart Table
@@ -43,6 +44,62 @@
                              </p>
                              <p class="text-xs font-semibold text-gray-500 mt-1">
                                  ${{ number_format($product->price, 2) }} each</p>
+
+                             {{-- ── VOUCHER PER ITEM ── --}}
+                             <div class="mt-3" id="voucher-section-{{ $product->id }}">
+                                 @php
+                                     $itemVoucher = $appliedVouchers[$product->id] ?? null;
+                                 @endphp
+
+                                 {{-- Apply Input (Hidden if voucher is present) --}}
+                                 <div class="flex items-center gap-2 max-w-[180px]"
+                                     id="voucher-input-row-{{ $product->id }}"
+                                     style="{{ $itemVoucher ? 'display:none' : '' }}">
+                                     <input type="text" id="voucher-input-{{ $product->id }}" placeholder="Voucher"
+                                         class="w-full h-8 px-3 rounded-lg border border-gray-100 text-[10px] font-mono tracking-widest focus:border-gray-300 focus:ring-0 outline-none transition-all"
+                                         onkeydown="if(event.key==='Enter') applyVoucher({{ $product->id }})">
+                                     <button type="button" onclick="applyVoucher({{ $product->id }})"
+                                         id="voucher-apply-btn-{{ $product->id }}"
+                                         class="h-8 px-3 rounded-lg bg-gray-900 hover:bg-black text-white text-[10px] font-bold transition-all">
+                                         Apply
+                                     </button>
+                                 </div>
+
+                                 {{-- Applied Badge (Visible if voucher is present) --}}
+                                 <div id="voucher-applied-row-{{ $product->id }}"
+                                     class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-100 max-w-[180px]"
+                                     style="{{ $itemVoucher ? '' : 'display:none' }}">
+                                     <div class="flex items-center gap-1.5 min-w-0">
+                                         <svg class="w-3 h-3 text-emerald-500 flex-shrink-0" fill="currentColor"
+                                             viewBox="0 0 20 20">
+                                             <path fill-rule="evenodd"
+                                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                 clip-rule="evenodd" />
+                                         </svg>
+                                         <span
+                                             class="text-[10px] font-bold text-emerald-700 font-mono tracking-wider truncate"
+                                             id="applied-code-label-{{ $product->id }}">{{ $itemVoucher['code'] ?? '' }}</span>
+                                     </div>
+                                     <button type="button" onclick="removeVoucher({{ $product->id }})"
+                                         class="text-[10px] text-gray-400 hover:text-red-500 font-semibold flex-shrink-0">
+                                         ✕
+                                     </button>
+                                 </div>
+
+                                 {{-- Flat discount indicator --}}
+                                 @if ($itemVoucher)
+                                     <p class="text-[10px] text-emerald-600 font-bold mt-1"
+                                         id="voucher-discount-label-{{ $product->id }}">
+                                         -${{ number_format($itemVoucher['discount'], 2) }} discount
+                                     </p>
+                                 @else
+                                     <p class="text-[10px] text-emerald-600 font-bold mt-1 hidden"
+                                         id="voucher-discount-label-{{ $product->id }}"></p>
+                                 @endif
+
+                                 <p id="voucher-error-{{ $product->id }}" class="mt-1 text-[9px] text-red-500 hidden">
+                                 </p>
+                             </div>
                          </div>
                      </div>
 
@@ -128,42 +185,6 @@
      <div class="lg:col-span-1">
          <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-7 sticky top-24">
              <h2 class="text-sm font-bold text-gray-900 mb-5 tracking-wide uppercase">Order Summary</h2>
-
-             {{-- Voucher --}}
-             <div class="mb-6" id="voucher-section">
-                 {{-- Input row (hidden when a voucher is applied) --}}
-                 <div class="flex items-center gap-2" id="voucher-input-row"
-                     style="{{ $voucherCode ? 'display:none' : '' }}">
-                     <input type="text" id="voucher-input" placeholder="Discount voucher" value=""
-                         class="voucher-input flex-1 h-10 px-4 rounded-xl border border-gray-200 text-sm focus:border-gray-400 focus:ring-0 outline-none transition-colors font-mono uppercase tracking-widest">
-                     <button type="button" id="voucher-apply-btn" onclick="applyVoucher()"
-                         class="h-10 px-4 rounded-xl bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold transition-colors whitespace-nowrap">
-                         Apply
-                     </button>
-                 </div>
-
-                 {{-- Applied voucher badge (visible when active) --}}
-                 <div id="voucher-applied-row"
-                     class="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200"
-                     style="{{ $voucherCode ? '' : 'display:none' }}">
-                     <div class="flex items-center gap-2">
-                         <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                             <path fill-rule="evenodd"
-                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                 clip-rule="evenodd" />
-                         </svg>
-                         <span class="text-xs font-bold text-emerald-700 font-mono tracking-widest"
-                             id="applied-code-label">{{ $voucherCode ?? '' }}</span>
-                     </div>
-                     <button type="button" onclick="removeVoucher()"
-                         class="text-xs text-gray-400 hover:text-red-500 font-semibold transition-colors">
-                         Remove
-                     </button>
-                 </div>
-
-                 {{-- Error message --}}
-                 <p id="voucher-error" class="mt-1.5 text-xs text-red-500 hidden"></p>
-             </div>
 
              {{-- Breakdown --}}
              <div class="space-y-3 text-sm mb-6">

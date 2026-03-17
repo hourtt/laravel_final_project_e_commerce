@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
-
+use \Carbon\Carbon;
 class VoucherController extends Controller
 {
     /**
@@ -94,6 +94,17 @@ class VoucherController extends Controller
 
         if ($validated['discount_type'] === 'percentage' && $validated['discount_value'] > 100) {
             return back()->withErrors(['discount_value' => 'Percentage discount cannot exceed 100%.'])->withInput();
+        }
+
+        // ── Absolute Restriction: Used or Expired ────────────────────────────
+        // Requirements: If a voucher has any usage OR is past its expiration date, it is considered 
+        // "finalized" and cannot be modified at all by admins to prevent data inconsistency.
+        $isExpired = $voucher->expires_at && $voucher->expires_at->isPast();
+        if ($voucher->used_count > 0 || $isExpired) {
+            $reason = $voucher->used_count > 0 ? 'has been used by customers' : 'has already expired';
+            return back()->withErrors([
+                'code' => "This voucher cannot be modified because it {$reason}."
+            ])->withInput();
         }
 
         $validated['status'] = $request->boolean('status', true);
