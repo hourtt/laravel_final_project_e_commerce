@@ -27,35 +27,26 @@ class Voucher extends Model
         'status'     => 'boolean',
     ];
 
-    /**
-     * Mutator to ensure status is saved correctly as a boolean literal for Postgres.
-     * When emulating prepares, PDO might convert true/false to 1/0, which
-     * Postgres rejects for boolean columns. Using DB::raw('true/false') avoids this.
-     */
+   // Ensure boolean status is stored correctly for Postgres using DB::raw.
+
     public function setStatusAttribute($value)
     {
         $this->attributes['status'] = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? \DB::raw('true') : \DB::raw('false');
     }
 
-    /**
-     * Relationship: the specific product this voucher is tied to (nullable).
-     */
+    // Relationship: the specific product this voucher is tied to (nullable).
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Relationship: the specific category this voucher is tied to (nullable).
-     */
+    // Relationship: the specific category this voucher is tied to (nullable).
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    /**
-     * Generate a random uppercase voucher code.
-     */
+    // Generate a random uppercase voucher code.
     public static function generateCode(int $length = 8): string
     {
         do {
@@ -65,10 +56,8 @@ class Voucher extends Model
         return $code;
     }
 
-    /**
-     * Check if the voucher is currently valid (active, not expired, usage not exceeded).
-     * Optionally pass a product to validate product-specific or category-specific vouchers.
-     */
+    // Check if the voucher is currently valid (active, not expired, usage not exceeded).
+    // Optionally pass a product to validate product-specific or category-specific vouchers.
     public function isValid(?Product $product = null): array
     {
         if (!$this->status) {
@@ -100,9 +89,7 @@ class Voucher extends Model
         return ['valid' => true, 'message' => 'Voucher valid!'];
     }
 
-    /**
-     * Calculate the discount amount for a given subtotal.
-     */
+    // Calculate the discount amount for a given subtotal.
     public function calculateDiscount(float $subtotal): float
     {
         if ($this->discount_type === 'percentage') {
@@ -115,11 +102,7 @@ class Voucher extends Model
         return min($discount, $subtotal);
     }
 
-    /**
-     * Increment the used_count counter atomically.
-     * Automatically deactivates the voucher in the same DB round-trip when the
-     * usage limit is reached — no Eloquent events, no race conditions.
-     */
+    // Atomically increment usage and deactivate when limit is reached.
     public function incrementUsage(): void
     {
         // Step 1: increment used_count in one atomic statement

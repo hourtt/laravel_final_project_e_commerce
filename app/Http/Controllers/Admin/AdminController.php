@@ -7,9 +7,8 @@ use App\Models\Product;
 use App\Models\Category;
 class AdminController extends Controller
 {
-    /**
-     * Display the admin dashboard.
-     */
+    
+    //Display the admin dashboard.
     public function index()
     {
         $totalProducts  = Product::count();

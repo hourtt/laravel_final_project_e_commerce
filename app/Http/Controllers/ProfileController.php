@@ -12,9 +12,8 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
+    // Display the user's profile form.
+
     public function edit(Request $request): View
     {
         $user = $request->user();
@@ -27,9 +26,7 @@ class ProfileController extends Controller
         return view('profile.edit', compact('user', 'totalOrders', 'totalSpent', 'totalSaved'));
     }
 
-    /**
-     * Update the user's profile information.
-     */
+    // Update the user's profile information.
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
@@ -43,9 +40,7 @@ class ProfileController extends Controller
         return redirect()->route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Update the user's profile image.
-     */
+    // Update the user's profile image.
     public function updateImage(Request $request): RedirectResponse
     {
         $image = ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'];
@@ -68,9 +63,7 @@ class ProfileController extends Controller
         return redirect()->route('profile.edit')->with('status', 'profile-image-updated');
     }
 
-    /**
-     * Remove the user's profile image.
-     */
+    // Remove the user's profile image.
     public function destroyImage(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -83,9 +76,7 @@ class ProfileController extends Controller
         return redirect()->route('profile.edit')->with('status', 'profile-image-removed');
     }
 
-    /**
-     * Delete the user's account.
-     */
+    // Delete the user's account.
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [

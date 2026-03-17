@@ -13,9 +13,7 @@ use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
-    /**
-     * Shared logic: resolve category + products, with optional search.
-     */
+    // Shared logic: resolve category + products, with optional search.
     private function resolveProducts(Request $request): array
     {
         $category   = $request->query('category', 'All');
@@ -56,9 +54,7 @@ class UserController extends Controller
         return compact('products', 'categories', 'category', 'search', 'date');
     }
 
-    /**
-     * Home page (public).
-     */
+    // Home page (public).
     public function index(Request $request)
     {
         if (auth()->check() && auth()->user()->role === 'admin') {
@@ -74,9 +70,7 @@ class UserController extends Controller
         return view('user.dashboard', $data);
     }
 
-    /**
-     * Authenticated user dashboard.
-     */
+    // Authenticated user dashboard.
     public function dashboard(Request $request)
     {
         if (auth()->user()->role === 'admin') {
@@ -92,27 +86,21 @@ class UserController extends Controller
         return view('user.dashboard', $data);
     }
 
-    /**
-     * AJAX endpoint — returns only the product grid HTML partial.
-     * Called by the JS category filter to avoid full page reload.
-     */
+    // AJAX endpoint — returns only the product grid HTML partial.
+    // Called by the JS category filter to avoid full page reload.
     public function filter(Request $request)
     {
         return view('user.partials.product-grid', $this->resolveProducts($request));
     }
 
-    /**
-     * AJAX search endpoint — returns the product grid partial
-     * filtered by the ?search= query param (case-insensitive).
-     */
+    // AJAX search endpoint — returns the product grid partial
+    // filtered by the ?search= query param (case-insensitive).
     public function search(Request $request)
     {
         return view('user.partials.product-grid', $this->resolveProducts($request));
     }
 
-    /**
-     * Product Detail Page.
-     */
+    // Product Detail Page.
     public function show($id)
     {
         $product = Product::with('category')->findOrFail($id);
@@ -124,7 +112,7 @@ class UserController extends Controller
     }
 
 
-    /**
+    //
      * Add to cart (AJAX)
      */
     public function addToCart(Request $request)
@@ -161,7 +149,7 @@ class UserController extends Controller
         ]);
     }
 
-    /**
+    //
      * Update cart quantity (AJAX)
      */
     public function updateCart(Request $request)
@@ -237,7 +225,7 @@ class UserController extends Controller
         ]);
     }
 
-    /**
+    //
      * Remove single item from cart
      */
  public function removeFromCart(Request $request, $id)
@@ -255,7 +243,7 @@ class UserController extends Controller
         
         return redirect()->route('checkout')->with('success', "{$productName} removed from cart.");
     }
-    /**
+    //
      * User's own order history.
      */
     public function orders(Request $request)
@@ -269,7 +257,7 @@ class UserController extends Controller
         return view('user.orders', compact('orders'));
     }
 
-    /**
+    //
      * User's single order detail.
      */
     public function orderShow($id)
@@ -282,7 +270,7 @@ class UserController extends Controller
         return view('user.orders-show', compact('order'));
     }
 
-    /**
+    //
      * Sync the current user's Pending order (tracked via session 'order_id')
      * with the current cart session, so order history always reflects the
      * latest quantities and products — not stale data from a previous page load.

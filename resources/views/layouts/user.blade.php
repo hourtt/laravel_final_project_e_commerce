@@ -74,10 +74,10 @@
                                 class="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-gray-100 transition-colors group"
                                 aria-label="My Profile">
                                 {{-- Avatar Image --}}
-                                <div class="w-7 h-7 rounded-full overflow-hidden shadow-sm group-hover:scale-110 transition-transform bg-gray-100 border border-gray-100">
-                                    <img src="{{ auth()->user()->profile_image_url }}" 
-                                         alt="{{ auth()->user()->name }}" 
-                                         class="w-full h-full object-cover">
+                                <div
+                                    class="w-7 h-7 rounded-full overflow-hidden shadow-sm group-hover:scale-110 transition-transform bg-gray-100 border border-gray-100">
+                                    <img src="{{ auth()->user()->profile_image_url }}" alt="{{ auth()->user()->name }}"
+                                        class="w-full h-full object-cover">
                                 </div>
                                 {{-- Online dot --}}
                                 <span
@@ -252,7 +252,7 @@
     </script>
 
     <script>
-        /** Logout Confirmation – SweetAlert2 */
+        // Logout Confirmation – SweetAlert2
         function confirmLogout(event) {
             Swal.fire({
                 title: 'Sign Out',

@@ -42,7 +42,7 @@
                     });
                 },
 
-                /* ── computed digit arrays ── */
+                // computed digit arrays
                 get intDigits() {
                     return Math.floor(Math.abs(this.price || 0))
                         .toString().split('').map(Number);
@@ -53,10 +53,8 @@
                     return dec.split('').map(Number);
                 },
 
-                /**
-                 * Full inline style for one drum span.
-                 * transition:none before first paint, smooth after.
-                 */
+                // Full inline style for one drum span.
+                // transition:none before first paint, smooth after.
                 drumStyle(d) {
                     const trans = this._ready ?
                         'transform 0.52s cubic-bezier(0.23, 1, 0.32, 1)' :
@@ -64,7 +62,7 @@
                     return `transform: translateY(${-(d * 1.35)}em); transition: ${trans}`;
                 },
 
-                /* ── called by vanilla-JS quantity controls ── */
+                // called by vanilla-JS quantity controls
                 onPriceUpdated({
                     total,
                     direction

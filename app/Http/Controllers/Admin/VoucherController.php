@@ -9,15 +9,11 @@ use Illuminate\Http\Request;
 use \Carbon\Carbon;
 class VoucherController extends Controller
 {
-    /**
-     * List all vouchers.
-     */
+    // List all vouchers.
     public function index()
     {
-        // ── Auto-deactivate exhausted vouchers ────────────────────────────────
-        // Safety net: deactivate any voucher whose used_count has reached the
-        // usage_limit but whose status is still marked active (can happen if the
-        // payment webhook ran before the browser-redirect session was available).
+        // Auto-deactivate exhausted vouchers
+        // Safety net: deactivate any voucher whose used_count has reached the usage_limit but whose status is still marked active 
         Voucher::whereRaw('status = true')
             ->whereNotNull('usage_limit')
             ->whereColumn('used_count', '>=', 'usage_limit')
@@ -30,9 +26,7 @@ class VoucherController extends Controller
         return view('admin.vouchers.index', compact('vouchers'));
     }
 
-    /**
-     * Show create form.
-     */
+    // Show create voucher form.
     public function create()
     {
         $products = Product::orderBy('name')->get();
@@ -40,9 +34,7 @@ class VoucherController extends Controller
         return view('admin.vouchers.create', compact('products', 'randomCode'));
     }
 
-    /**
-     * Store a new voucher.
-     */
+    // Store new voucher
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -68,18 +60,14 @@ class VoucherController extends Controller
             ->with('success', "Voucher code \"{$validated['code']}\" created successfully!");
     }
 
-    /**
-     * Show edit form.
-     */
+    // Show edit voucher form
     public function edit(Voucher $voucher)
     {
         $products = Product::orderBy('name')->get();
         return view('admin.vouchers.edit', compact('voucher', 'products'));
     }
 
-    /**
-     * Update the voucher.
-     */
+    // Update voucher
     public function update(Request $request, Voucher $voucher)
     {
         $validated = $request->validate([
@@ -96,9 +84,8 @@ class VoucherController extends Controller
             return back()->withErrors(['discount_value' => 'Percentage discount cannot exceed 100%.'])->withInput();
         }
 
-        // ── Absolute Restriction: Used or Expired ────────────────────────────
-        // Requirements: If a voucher has any usage OR is past its expiration date, it is considered 
-        // "finalized" and cannot be modified at all by admins to prevent data inconsistency.
+        // Restriction: Used or Expired 
+        // Requirements: If a voucher has any usage OR is past its expiration date, it is considered finalized and cannot be modified at all by admins to prevent data inconsistency.
         $isExpired = $voucher->expires_at && $voucher->expires_at->isPast();
         if ($voucher->used_count > 0 || $isExpired) {
             $reason = $voucher->used_count > 0 ? 'has been used by customers' : 'has already expired';
@@ -124,9 +111,7 @@ class VoucherController extends Controller
             ->with('success', "Voucher code \"{$voucher->code}\" updated successfully!");
     }
 
-    /**
-     * Delete a voucher.
-     */
+    // Delete a voucher
     public function destroy(Voucher $voucher)
     {
         $code = $voucher->code;
@@ -136,9 +121,7 @@ class VoucherController extends Controller
             ->with('success', "Voucher \"{$code}\" deleted.");
     }
 
-    /**
-     * AJAX: generate a fresh random code.
-     */
+    // AJAX: generate a random vouhcer code
     public function generateCode()
     {
         return response()->json(['code' => Voucher::generateCode()]);

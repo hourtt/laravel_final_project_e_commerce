@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class VoucherController extends Controller
 {
-    /**
-     * AJAX: Validate and apply a voucher code.
-     */
+    // AJAX: Validate and apply a voucher code.
     public function apply(Request $request)
     {
         $request->validate([
@@ -127,9 +125,7 @@ class VoucherController extends Controller
         ]);
     }
 
-    /**
-     * AJAX: Remove a specific voucher.
-     */
+    // AJAX: Remove a specific voucher.
     public function remove(Request $request)
     {
         $productId = $request->product_id;

@@ -23,11 +23,7 @@ class PaymentController extends Controller
         $this->payWayService = $payWayService;
     }
 
-    /**
-     * Show cart & prepare ABA payment hash.
-     * Creates a pending order ONLY if no valid pending order already exists
-     * for the current cart contents, to avoid duplicating orders on refresh.
-     */
+    // Show cart, prepare ABA hash, and create a pending order only if none exists.
     public function index(Request $request)
     {
         $cart = session()->get('cart', []);
@@ -83,14 +79,11 @@ class PaymentController extends Controller
                     ->with('error', 'Orders with a total price of $0.00 are not allowed.');
             }
 
-            // Build the product ID list for the JS voucher apply AJAX call.
-            // Done here in the controller so it is available in the layout's
-            // @include('checkout-script'), which runs outside product-state scope.
+            // Build product IDs for voucher AJAX, used in checkout-script outside scope.
             $cartProductIds = $products->pluck('id')->map(fn($id) => (int) $id)->toArray();
 
             try {
-                // Reuse an existing Pending order if it belongs to this user,
-                // so refreshing the checkout page does not spawn duplicate orders.
+               // Reuse existing pending order to prevent duplicates on refresh.
                 $existingOrderId = session('order_id');
                 $order = null;
 
@@ -106,7 +99,7 @@ class PaymentController extends Controller
                 }
 
                 if ($order) {
-                    // ── Sync existing pending order with the current cart ──
+                    // Sync existing pending order with the current cart
                     DB::beginTransaction();
 
                     $cartProductIds = $products->pluck('id')->toArray();
@@ -151,7 +144,7 @@ class PaymentController extends Controller
                     DB::commit();
 
                 } else {
-                    // ── No valid pending order — create a fresh one ──
+                    // No valid pending order — create a fresh one
                     DB::beginTransaction();
                     $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
                     $order = Order::create([
@@ -229,12 +222,8 @@ class PaymentController extends Controller
         ));
     }
 
-    /**
-     * AJAX: Recalculate cart total from session and return fresh ABA params.
-     * Called by JS immediately before submitting the ABA form, so the amount
-     * and hash always reflect the current cart — even if the user changed
-     * quantities after the page first loaded.
-     */
+   // AJAX: Recalculate cart and return updated ABA params before submit.
+
     public function preparePayment(Request $request)
     {
         $cart = session()->get('cart', []);
@@ -246,7 +235,7 @@ class PaymentController extends Controller
         $productIds = array_keys($cart);
         $products   = Product::whereIn('id', $productIds)->get();
 
-        // ── Recalculate subtotal ──────────────────────────────────────────────
+        // Recalculate subtotal
         $total = 0;
         foreach ($products as $product) {
             $qty = $cart[$product->id]['quantity'] ?? 0;
@@ -258,7 +247,7 @@ class PaymentController extends Controller
             $total += $product->price * $qty;
         }
 
-        // ── Apply voucher discount ────────────────────────────────────────────
+        // Apply voucher discount
         $appliedVouchers = session('applied_vouchers', []);
         $voucherDiscount = 0.0;
         foreach ($appliedVouchers as $pId => $vData) {
@@ -279,10 +268,8 @@ class PaymentController extends Controller
         }
 
         try {
-            // ── Resolve order ─────────────────────────────────────────────────
-            // Find the existing pending order OR create a fresh one with all items.
-            // This prevents the "0 items / $0.00" bug that occurred when the session
-            // order_id was stale or the order was somehow invalid.
+            // Resolve order
+            // Get or create a valid pending order to avoid empty or invalid data.
             $orderId = session('order_id');
             $order   = $orderId ? Order::find($orderId) : null;
 
@@ -293,7 +280,7 @@ class PaymentController extends Controller
                 $voucherCode = session('voucher_code');
 
                 if ($order && $order->status === 'Pending' && $order->user_id === Auth::id()) {
-                    // ── Sync existing pending order ───────────────────────────
+                    // Sync existing pending order
                     $cartProductIds = $products->pluck('id')->toArray();
 
                     // Remove items that are no longer in the cart
@@ -334,7 +321,7 @@ class PaymentController extends Controller
                     ]);
 
                 } else {
-                    // ── No valid order in session — create a fresh one ────────
+                    // No valid order in session — create a fresh one
                     // This handles: page loaded without cart, session expired,
                     // or stale order_id pointing to a non-Pending / foreign order.
                     $appliedVouchers = session('applied_vouchers', []);
@@ -384,7 +371,7 @@ class PaymentController extends Controller
             ], 500);
         }
 
-        // ── Generate fresh ABA payment parameters ─────────────────────────────
+        // Generate fresh ABA payment parameters
         $merchant_id          = config('payway.merchant_id');
         $req_time             = time();
         $tranId               = 'ORD-' . $order->id . '-' . $req_time;
@@ -412,9 +399,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    /**
-     * Handle user redirect from ABA after payment attempt.
-     */
+    // Handle user redirect from ABA after payment attempt.
     public function checkTransaction(Request $request)
     {
         Log::info('CHECK TRANSACTION HIT', [
@@ -444,9 +429,7 @@ class PaymentController extends Controller
             ->with('error', 'Payment failed or is still pending.');
     }
 
-    /**
-     * Handle ABA Server-to-Server IPN Pushback webhook.
-     */
+    // Handle ABA Server-to-Server IPN Pushback webhook.
     public function pushback(Request $request)
     {
         Log::info('ABA PUSHBACK RECEIVED', $request->all());
