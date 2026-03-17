@@ -12,10 +12,6 @@
             </svg>
             <span class="text-[15px] font-medium text-gray-700" x-text="displayText || 'Filter by Date'"></span>
         </div>
-        <svg class="w-4 h-4 text-gray-400 transition-transform duration-300" :class="open ? 'rotate-180' : ''"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-        </svg>
     </button>
 
     {{-- iOS Style Calendar Modal Overlay --}}
@@ -109,13 +105,14 @@
                     </div>
                 </div>
 
-                <div x-show="showError" 
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="opacity-0 -translate-y-2"
-                     x-transition:enter-end="opacity-100 translate-y-0"
-                     class="px-5 py-3 mx-4 mt-2 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                    <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <div x-show="showError" x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 -translate-y-2"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="px-5 py-3 mx-4 mt-2 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                    <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <p class="text-[12px] font-medium text-red-600 leading-tight" x-text="errorMessage"></p>
                 </div>
@@ -278,14 +275,15 @@
 
             apply() {
                 this.showError = false;
-                
+
                 if (this.selectedDate) {
                     const selected = new Date(this.selectedDate);
                     const now = new Date();
-                    now.setHours(23, 59, 59, 999); 
+                    now.setHours(23, 59, 59, 999);
 
                     if (selected > now) {
-                        this.errorMessage = 'Invalid Date: You cannot filter for future dates as no order data exists yet.';
+                        this.errorMessage =
+                            'Invalid Date: You cannot filter for future dates as no order data exists yet.';
                         this.showError = true;
                         return;
                     }
@@ -293,7 +291,7 @@
 
                 this.open = false;
                 const dateParam = this.selectedDate ? `${this.selectedDate}` : '';
-                
+
                 if (dateParam) {
                     window.location.href = window.location.pathname + '?date=' + dateParam;
                 } else {

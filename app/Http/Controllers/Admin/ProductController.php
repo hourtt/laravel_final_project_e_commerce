@@ -12,23 +12,32 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $search   = trim($request->input('search', ''));
-        $searchBy = $request->input('search_by', 'name'); // 'name' | 'category'
-        $sortBy = 'stock';
-        $order = 'desc';
-        $products = Product::with('category')
-            ->when($search !== '', function ($q) use ($search, $searchBy) {
-                if ($searchBy === 'category') {
-                    // Filter by category name only
-                    $q->whereHas('category', fn ($c) => $c->where('name', 'like', "%{$search}%"));
-                } else {
-                    // Filter by product name only (default)
-                    $q->where('name', 'like', "%{$search}%");
-                }
-            })
-            ->orderBy($sortBy, $order)
-            ->get();
-        return view('admin.products.index', compact('products', 'search', 'searchBy','sortBy','order'));
+        $search = trim($request->input('search', ''));
+        $categoryId = $request->input('category_id', 'all');
+
+        $query = Product::with('category');
+
+        if ($search !== '') {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $query->where('category_id', $categoryId);
+        }
+
+        // Handle sorting - keeping the original default for now or using latest()
+        $products = $query->latest('id')->paginate(10)->withQueryString();
+        $categories = Category::all();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('admin.products.partials.product_table', compact('products'))->render(),
+                'pagination' => (string) $products->links(),
+                'total' => $products->total(),
+            ]);
+        }
+
+        return view('admin.products.index', compact('products', 'categories', 'search', 'categoryId'));
     }
     public function create()
     {
