@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\PayWayService;
 use Illuminate\Http\Request;
-
+use \Carbon\Carbon;
 class OrderController extends Controller
 {
     protected $payWayService;
@@ -22,14 +22,27 @@ class OrderController extends Controller
 
         // 2. Apply Date Filter if provided
         if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
+            $selectedDate = Carbon::parse($request->date)->startOfDay();
+            $today = Carbon::today();
+
+            if ($selectedDate->gt($today)) {
+                $error = 'Invalid Date: You cannot filter for future dates as no order data exists yet.';
+                
+                if ($request->ajax()) {
+                    return response()->json(['error' => $error], 422);
+                }
+                
+                return redirect()->back()->with('error', $error);
+            }
+
+            $query->whereDate('created_at', $selectedDate);
         }
 
         // 3. Fetch paginated orders
         $orders = $query->paginate(20);
 
-        // Append the date query parameter so pagination links keep the filter selected
-        $orders->appends(['date' => $request->date]);
+        // Keep existing parameters in pagination links
+        $orders->appends($request->all());
 
         // 4. Group the items of the current page
         $groupedOrders = $orders->getCollection()->groupBy(function ($order) {
@@ -43,6 +56,11 @@ class OrderController extends Controller
 
         // 5. Re-assign the grouped collection back to the paginator
         $orders->setCollection($groupedOrders);
+
+        // 6. Handle AJAX Request
+        if ($request->ajax()) {
+            return view('admin.orders.table', compact('orders'))->render();
+        }
 
         return view('admin.orders.index', compact('orders'));
     }

@@ -19,6 +19,7 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 
     <style>
         /* ── Noto Sans Kaithi – dashboard stat numbers ── */

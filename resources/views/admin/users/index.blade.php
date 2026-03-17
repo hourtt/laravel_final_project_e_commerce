@@ -36,19 +36,19 @@
                             <td class="px-4 py-3.5 text-center">
                                 @if ($user->role === 'admin')
                                     <span
-                                        class="text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Admin</span>
+                                        class="text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full text-xs font-bold tracking-wider">Admin</span>
                                 @else
                                     <span
-                                        class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">User</span>
+                                        class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full text-xs font-bold tracking-wider">User</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3.5 text-center">
                                 @if ($user->is_active)
                                     <span
-                                        class="text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Active</span>
+                                        class="text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs tracking-wider">Active</span>
                                 @else
                                     <span
-                                        class="text-red-600 bg-red-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Disabled</span>
+                                        class="text-red-600 bg-red-50 px-2.5 py-1 rounded-full text-xs tracking-wider">Disabled</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3.5 text-center text-gray-500 text-xs">

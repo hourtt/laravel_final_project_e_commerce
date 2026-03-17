@@ -1,8 +1,4 @@
 <x-user-layout>
-
-    {{-- ============================================================= --}}
-    {{-- HERO BANNER --}}
-    {{-- ============================================================= --}}
     <section class="relative bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 overflow-hidden">
         <!-- Decorative blobs -->
         <div
@@ -78,12 +74,19 @@
         x-data="{
             activeCategory: '{{ $category }}',
             activeSearch: '{{ addslashes($search ?? '') }}',
+            activeDate: '{{ $date ?? '' }}',
             isLoading: false,
             loadingCategory: '',
             
-            async fetchProducts(url, category = null, search = null) {
+            async fetchProducts() {
                 this.isLoading = true;
-                if (category !== null) this.loadingCategory = category;
+                
+                const params = new URLSearchParams();
+                if (this.activeCategory && this.activeCategory !== 'All') params.set('category', this.activeCategory);
+                if (this.activeSearch) params.set('search', this.activeSearch);
+                if (this.activeDate) params.set('date', this.activeDate);
+                
+                const url = `{{ route('home') }}?${params.toString()}`;
                 
                 try {
                     const response = await fetch(url, {
@@ -92,14 +95,8 @@
                     const html = await response.text();
                     document.getElementById('product-grid-container').innerHTML = html;
                     
-                    // Update state
-                    if (category !== null) this.activeCategory = category;
-                    if (search !== null) this.activeSearch = search;
-                    
                     // Update URL
-                    const newUrl = new URL(url);
-                    newUrl.searchParams.delete('page'); // Reset page on filter/search
-                    history.pushState({}, '', newUrl.toString());
+                    history.pushState({}, '', url);
                     
                 } catch (error) {
                     console.error('Fetch error:', error);
@@ -110,15 +107,19 @@
             },
 
             filter(category) {
-                this.activeSearch = '';
-                const url = `{{ route('home') }}?category=${encodeURIComponent(category)}`;
-                this.fetchProducts(url, category, '');
+                this.activeCategory = category;
+                this.loadingCategory = category;
+                this.fetchProducts();
             },
 
             search(query) {
                 this.activeSearch = query;
-                const url = `{{ route('home') }}?search=${encodeURIComponent(query)}`;
-                this.fetchProducts(url, null, query);
+                this.fetchProducts();
+            },
+
+            dateChanged(date) {
+                this.activeDate = date;
+                this.fetchProducts();
             },
 
             async handlePagination(event) {
@@ -141,18 +142,15 @@
                 }
             }
         }"
+        @date-changed.window="dateChanged($event.detail.date)"
         @popstate.window="
             const params = new URLSearchParams(window.location.search);
-            const cat = params.get('category') || 'All';
-            const srch = params.get('search') || '';
-            const page = params.get('page') || 1;
+            this.activeCategory = params.get('category') || 'All';
+            this.activeSearch = params.get('search') || '';
+            this.activeDate = params.get('date') || '';
             
-            this.activeCategory = cat;
-            this.activeSearch = srch;
-            
-            const url = window.location.href;
             this.isLoading = true;
-            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(r => r.text())
                 .then(h => {
                     document.getElementById('product-grid-container').innerHTML = h;
@@ -174,11 +172,12 @@
         <!-- Section Header -->
         <div class="mb-8 text-center" :class="{ 'opacity-40 blur-[1px]': isLoading }">
             <h2 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Our Products</h2>
-            <p class="text-gray-500 mt-2 text-sm">Browse our full collection — search or filter by category.</p>
+            <p class="text-gray-500 mt-2 text-sm">Browse our full collection — search or filter by category and date.</p>
         </div>
 
-        {{-- SEARCH BAR --}}
-        <div class="flex justify-center mb-7" :class="{ 'opacity-40 blur-[1px]': isLoading }">
+        {{-- FILTERS BAR (Search + Date) --}}
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-7" :class="{ 'opacity-40 blur-[1px]': isLoading }">
+            {{-- SEARCH BAR --}}
             <div class="relative w-full max-w-xl group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -190,7 +189,7 @@
                 </div>
 
                 <input type="text"
-                    placeholder="Search products… (e.g. iPhone, Sony, Keyboard)" 
+                    placeholder="Search products…" 
                     autocomplete="off"
                     x-model.debounce.500ms="activeSearch"
                     @input="search(activeSearch)"
@@ -206,6 +205,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
+            </div>
+
+            {{-- DATE FILTER --}}
+            <div class="w-full md:w-auto">
+                <x-date-filter />
             </div>
         </div>
 
@@ -223,7 +227,7 @@
                     class="relative h-[48px] min-w-[120px] inline-flex items-center justify-center gap-1.5 px-6
                            rounded-full text-sm font-semibold border transition-all duration-300
                            active:scale-95 disabled:opacity-70"
-                    :class="activeCategory === '{{ $cat }}' && activeSearch === '' 
+                    :class="activeCategory === '{{ $cat }}'
                            ? 'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-500/25' 
                            : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-600'"
                     :disabled="isLoading"

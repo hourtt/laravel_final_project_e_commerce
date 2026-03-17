@@ -20,6 +20,7 @@ class UserController extends Controller
     {
         $category   = $request->query('category', 'All');
         $search     = trim($request->query('search', ''));
+        $date       = $request->query('date', '');
         
         // Cache category names for 1 hour to avoid repeated DB hits
         $categories = Cache::remember('category_names_list', 3600, function () {
@@ -30,22 +31,29 @@ class UserController extends Controller
 
         $query = Product::with('category');
 
+        // Apply filters
         if ($search !== '') {
             $term = '%' . strtolower($search) . '%';
             $query->where('name', 'ILIKE', $term);
-            $query->latest();
-        } elseif ($category === 'All') {
-            $query->latest();
-        } else {
+        }
+
+        if ($category !== 'All') {
             $query->whereHas('category', function ($q) use ($category) {
                 $q->where('name', $category);
-            })->latest();
+            });
         }
+
+        if ($date !== '') {
+            $query->whereDate('created_at', $date);
+        }
+
+        // Always sort by latest if no specific sorting is requested (sorting logic can be added later if needed)
+        $query->latest();
 
         // Use pagination instead of take(50)
         $products = $query->paginate(20)->withQueryString();
 
-        return compact('products', 'categories', 'category', 'search');
+        return compact('products', 'categories', 'category', 'search', 'date');
     }
 
     /**
