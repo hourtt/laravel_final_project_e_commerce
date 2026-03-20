@@ -16,8 +16,14 @@ class Product extends Model
         'description',
         'price',
         'category_id',
+        'brand_id',
         'stock',
     ];
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
 
   
     //* Get Image Helper Function
