@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\Voucher;
+use App\Models\Brand;
 use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
@@ -18,6 +19,7 @@ class UserController extends Controller
     {
         $category   = $request->query('category', 'All');
         $search     = trim($request->query('search', ''));
+        $brandName  = $request->query('brand', '');
         $date       = $request->query('date', '');
         
         // Cache category list for 1 hour to avoid repeated DB hits
@@ -41,6 +43,12 @@ class UserController extends Controller
             });
         }
 
+        if ($brandName !== '') {
+            $query->whereHas('brand', function ($q) use ($brandName) {
+                $q->where('name', $brandName);
+            });
+        }
+
         if ($date !== '') {
             $query->whereDate('created_at', $date);
         }
@@ -51,7 +59,18 @@ class UserController extends Controller
         // Use pagination instead of take(50)
         $products = $query->paginate(20)->withQueryString();
 
-        return compact('products', 'categories', 'category', 'search', 'date');
+        // Fetch brands relevant to the current category (or all brands if 'All' is selected)
+        $brandQuery = Brand::whereHas('products', function ($q) use ($category) {
+            if ($category !== 'All') {
+                $q->whereHas('category', function ($sq) use ($category) {
+                    $sq->where('name', $category);
+                });
+            }
+        });
+        
+        $brands = $brandQuery->pluck('name')->unique()->values();
+
+        return compact('products', 'categories', 'category', 'search', 'date', 'brands', 'brandName');
     }
 
     // Home page (public).
