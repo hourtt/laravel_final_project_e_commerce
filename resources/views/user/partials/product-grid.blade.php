@@ -2,18 +2,125 @@
     $search = $search ?? '';
 @endphp
 
-{{-- Results Count --}}
-<div class="flex items-center justify-between mb-6">
-    <p class="text-sm text-gray-500">
-        Showing <span class="font-semibold text-gray-800">{{ $products->count() }}</span>
-        @if ($search !== '')
-            results for <span class="font-semibold text-blue-600">"{{ $search }}"</span>
-        @elseif ($category !== 'All')
-            results in <span class="font-semibold text-blue-600">{{ $category }}</span>
-        @else
-            products
-        @endif
-    </p>
+{{-- Results Count & Filters Row --}}
+<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 mb-10">
+    {{-- Left Side: Showing Count --}}
+    <div class="flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-1">
+        <div
+            class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-600/20 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                    clip-rule="evenodd" />
+            </svg>
+        </div>
+        <div class="min-w-0">
+            <p class="text-sm font-bold text-gray-900 leading-tight">
+                Showing <span class="text-blue-600 italic">{{ $products->total() }}</span>
+                {{ Str::plural('result', $products->total()) }}
+            </p>
+            <p class="text-xs text-gray-400 mt-1 truncate">
+                @if ($search !== '')
+                    for <span class="font-bold text-gray-600 italic">"{{ $search }}"</span>
+                @elseif ($brandName !== '')
+                    for <span class="font-bold text-gray-600 italic">{{ $brandName }}</span> in <span
+                        class="font-bold text-gray-600 italic">{{ $category }}</span>
+                @elseif ($category !== 'All')
+                    in <span class="font-bold text-gray-600 italic">{{ $category }}</span>
+                @else
+                    across all categories
+                @endif
+            </p>
+        </div>
+    </div>
+
+    {{-- Right Side: Premium Brand Select --}}
+    @if (count($brands) > 0)
+        <div x-data="{
+            open: false,
+            selected: '{{ $brandName ?: 'All Brands' }}',
+            brands: @js($brands),
+            toggle() { this.open = !this.open },
+            select(brand) {
+                this.selected = brand || 'All Brands';
+                this.open = false;
+                this.activeBrand = brand;
+                this.brandFilter(brand);
+            }
+        }" class="relative w-full lg:w-[280px]">
+            <!-- Trigger -->
+            <button @click="toggle()" type="button"
+                class="relative flex items-center justify-between w-full h-[64px] px-6 bg-white border border-gray-300 rounded-2xl text-left transition-all duration-300 hover:shadow-md focus:outline-none shadow-sm"
+                :class="open ? 'ring-2 ring-blue-500 border-transparent shadow-xl' : ''">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Select
+                        Brand</span>
+                    <span x-text="selected" class="text-sm font-bold text-gray-800"></span>
+                </div>
+                <svg class="w-5 h-5 text-gray-300 transition-transform duration-300" :class="open ? 'rotate-180' : ''"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+
+            <!-- Dropdown Card -->
+            <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-[-10px] scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 translate-y-[-10px] scale-95" @click.away="open = false"
+                class="absolute z-50 w-full mt-3 bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden"
+                style="display: none;">
+                <ul class="max-h-[300px] overflow-y-auto py-3 custom-scrollbar flex flex-col gap-1 px-2">
+                    <li @click="select('')" 
+                        class="px-4 py-3 cursor-pointer transition-all duration-200 text-sm rounded-xl flex items-center justify-between group"
+                        :class="selected === 'All Brands' 
+                            ? 'bg-blue-50 text-blue-600 border border-blue-100 font-bold' 
+                            : 'text-gray-600 hover:bg-gray-50 border border-transparent'">
+                        <span class="flex items-center gap-2">
+                            <span class="opacity-60 group-hover:scale-110 transition-transform">🏷️</span>
+                            All Brands
+                        </span>
+                        <template x-if="selected === 'All Brands'">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                        </template>
+                    </li>
+                    <template x-for="brand in brands" :key="brand">
+                        <li @click="select(brand)" 
+                            class="px-4 py-3 cursor-pointer transition-all duration-200 text-sm rounded-xl flex items-center justify-between group"
+                            :class="selected === brand 
+                                ? 'bg-blue-50 text-blue-600 border border-blue-100 font-bold' 
+                                : 'text-gray-600 hover:bg-gray-50 border border-transparent'">
+                            <span x-text="brand"></span>
+                            <template x-if="selected === brand">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                            </template>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <style>
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #E5E7EB;
+                    border-radius: 10px;
+                }
+            </style>
+        </div>
+    @endif
 </div>
 
 {{-- Product Grid --}}
@@ -61,20 +168,18 @@
                             class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 mix-blend-multiply"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
                         <div class="hidden w-full h-full items-center justify-center">
-                            @if($product->category && $product->category->icon && str_contains($product->category->icon, 'images/category/'))
-                                <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}" 
-                                     alt="{{ $product->category->name }}" 
-                                     class="w-20 h-20 opacity-20 object-contain">
+                            @if ($product->category && $product->category->icon && str_contains($product->category->icon, 'images/category/'))
+                                <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}"
+                                    alt="{{ $product->category->name }}" class="w-20 h-20 opacity-20 object-contain">
                             @else
                                 <span class="text-5xl opacity-20">{{ $product->category->icon ?? '📦' }}</span>
                             @endif
                         </div>
                     @else
                         <div class="flex w-full h-full items-center justify-center">
-                            @if($product->category && $product->category->icon && str_contains($product->category->icon, 'images/category/'))
-                                <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}" 
-                                     alt="{{ $product->category->name }}" 
-                                     class="w-20 h-20 opacity-20 object-contain">
+                            @if ($product->category && $product->category->icon && str_contains($product->category->icon, 'images/category/'))
+                                <img src="{{ asset(str_replace('public/', '', $product->category->icon)) }}"
+                                    alt="{{ $product->category->name }}" class="w-20 h-20 opacity-20 object-contain">
                             @else
                                 <span class="text-5xl opacity-20">{{ $product->category->icon ?? '📦' }}</span>
                             @endif
