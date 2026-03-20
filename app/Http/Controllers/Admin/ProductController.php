@@ -26,7 +26,7 @@ class ProductController extends Controller
         }
 
         // Handle sorting - keeping the original default for now or using latest()
-        $products = $query->latest('id')->paginate(10)->withQueryString();
+        $products = $query->latest('id')->paginate(5)->fragment('products')->withQueryString();
         $categories = Category::all();
 
         if ($request->ajax()) {
