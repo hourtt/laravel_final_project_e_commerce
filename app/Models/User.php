@@ -51,6 +51,7 @@ class User extends Authenticatable
         ];
     }
 
+    // A user can has many orders
     public function orders()
     {
         return $this->hasMany(Order::class);

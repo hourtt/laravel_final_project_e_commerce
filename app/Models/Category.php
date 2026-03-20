@@ -11,6 +11,7 @@ class Category extends Model
 
     protected $fillable = ['name', 'icon'];
 
+    // A category can has many products
     public function products()
     {
         return $this->hasMany(Product::class);
