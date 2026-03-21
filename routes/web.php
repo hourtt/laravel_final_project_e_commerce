@@ -1,6 +1,6 @@
 <?php
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminController; // Admin dashboard controller
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
 use App\Http\Controllers\User\VoucherController as UserVoucherController;
+use App\Http\Controllers\User\AddressController;
 
 // Public home
 Route::get('/', [UserController::class, 'index'])->name('home');
@@ -22,7 +23,7 @@ Route::get('/products/search', [UserController::class, 'search'])->name('product
 Route::get('/products/{id}', [UserController::class, 'show'])->name('products.show');
 
 //* User routes (logged in)
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
     Route::get('/checkout', [PaymentController::class, 'index'])->name('checkout');
     Route::post('/cart/add', [UserController::class, 'addToCart'])->name('cart.add');
@@ -63,6 +64,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/image', [ProfileController::class, 'updateImage'])->name('profile.image.update');
     Route::delete('/profile/image', [ProfileController::class, 'destroyImage'])->name('profile.image.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Addresses
+    Route::get('/addresses', [AddressController::class, 'index'])->name('addresses.index');
+    Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
+    Route::patch('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+    Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+    Route::post('/addresses/{address}/default', [AddressController::class, 'setAsDefault'])->name('addresses.default');
 });
 
 require __DIR__ . '/auth.php';
