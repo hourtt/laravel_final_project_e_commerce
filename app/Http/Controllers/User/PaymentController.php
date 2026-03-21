@@ -203,6 +203,9 @@ class PaymentController extends Controller
                     ->with('error', 'An error occurred during checkout.');
             }
         }
+
+        $addresses = Auth::user()->addresses()->orderByDesc('is_default')->get();
+
         return view('user.checkout', compact(
             'cartData',
             'cartProductIds',
@@ -218,7 +221,8 @@ class PaymentController extends Controller
             'currency',
             'payment_option',
             'return_url',
-            'continue_success_url'
+            'continue_success_url',
+            'addresses'
         ));
     }
 
@@ -274,10 +278,11 @@ class PaymentController extends Controller
             $order   = $orderId ? Order::find($orderId) : null;
 
             DB::transaction(function () use (
-                &$order, $products, $cart, $discountedTotal, $voucherDiscount
+                &$order, $products, $cart, $discountedTotal, $voucherDiscount, $request
             ) {
                 // Resolve session voucher fields inside closure
                 $voucherCode = session('voucher_code');
+                $addressId = $request->input('address_id');
 
                 if ($order && $order->status === 'Pending' && $order->user_id === Auth::id()) {
                     // Sync existing pending order
@@ -314,11 +319,29 @@ class PaymentController extends Controller
                     }
 
                     $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
-                    $order->update([
+                    
+                    $updates = [
                         'total_price'      => $discountedTotal,
                         'voucher_code'     => $voucherCodesStr ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
-                    ]);
+                    ];
+
+                    // Capture shipping address snapshot if provided
+                    if ($addressId) {
+                        $address = \App\Models\Address::find($addressId);
+                        if ($address && $address->user_id === Auth::id()) {
+                            $updates['address_id'] = $address->id;
+                            $updates['shipping_full_name'] = $address->full_name;
+                            $updates['shipping_phone_number'] = $address->phone_number;
+                            $updates['shipping_street_address'] = $address->street_address;
+                            $updates['shipping_city'] = $address->city;
+                            $updates['shipping_state'] = $address->state;
+                            $updates['shipping_postal_code'] = $address->postal_code;
+                            $updates['shipping_country'] = $address->country;
+                        }
+                    }
+
+                    $order->update($updates);
 
                 } else {
                     // No valid order in session — create a fresh one
@@ -327,13 +350,30 @@ class PaymentController extends Controller
                     $appliedVouchers = session('applied_vouchers', []);
                     $voucherCodesStr = implode(', ', array_column($appliedVouchers, 'code'));
                     
-                    $order = Order::create([
+                    $orderData = [
                         'user_id'          => Auth::id(),
                         'total_price'      => $discountedTotal,
                         'status'           => 'Pending',
                         'voucher_code'     => $voucherCodesStr ?: null,
                         'voucher_discount' => $voucherDiscount > 0 ? $voucherDiscount : null,
-                    ]);
+                    ];
+
+                    // Capture shipping address snapshot if provided
+                    if ($addressId) {
+                        $address = \App\Models\Address::find($addressId);
+                        if ($address && $address->user_id === Auth::id()) {
+                            $orderData['address_id'] = $address->id;
+                            $orderData['shipping_full_name'] = $address->full_name;
+                            $orderData['shipping_phone_number'] = $address->phone_number;
+                            $orderData['shipping_street_address'] = $address->street_address;
+                            $orderData['shipping_city'] = $address->city;
+                            $orderData['shipping_state'] = $address->state;
+                            $orderData['shipping_postal_code'] = $address->postal_code;
+                            $orderData['shipping_country'] = $address->country;
+                        }
+                    }
+
+                    $order = Order::create($orderData);
 
                     foreach ($products as $product) {
                         $qty = $cart[$product->id]['quantity'];
