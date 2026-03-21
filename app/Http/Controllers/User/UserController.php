@@ -129,8 +129,7 @@ class UserController extends Controller
 
         return view('user.product-show', compact('product', 'categories'));
     }
-
-
+    
     //Add to cart (AJAX)
     public function addToCart(Request $request)
     {
@@ -170,7 +169,7 @@ class UserController extends Controller
     public function updateCart(Request $request)
     {
         $productId = $request->input('product_id');
-        $quantity = (int) $request->input('quantity');
+        $quantity = (int) $request->input('quantity',1);
         
         if ($quantity < 1) {
             $quantity = 1;
@@ -241,7 +240,7 @@ class UserController extends Controller
     }
 
     //Remove single item from car
- public function removeFromCart(Request $request, $id)
+    public function removeFromCart(Request $request, $id)
     {
         $product = Product::find($id);
         $productName = $product?->name ?? 'Item';
@@ -256,6 +255,7 @@ class UserController extends Controller
         
         return redirect()->route('checkout')->with('success', "{$productName} removed from cart.");
     }
+    
     //User's own order history
     public function orders(Request $request)
     {
@@ -279,11 +279,8 @@ class UserController extends Controller
         return view('user.orders-show', compact('order'));
     }
 
-    // Sync the current user's Pending order (tracked via session 'order_id')
-    // with the current cart session, so order history always reflects the
-    // latest quantities and products — not stale data from a previous page load.
-    // Called from updateCart() and removeFromCart() so any cart change
-    // is immediately reflected in the pending order.
+    //Sync the user’s pending order with the current cart session so it always reflects the latest items and quantities. 
+    //Called on cart updates and removals to prevent stale data.
     private function syncPendingOrder(): void
     {
         $orderId = session('order_id');
