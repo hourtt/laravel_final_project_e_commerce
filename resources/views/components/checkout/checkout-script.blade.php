@@ -1,30 +1,10 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://checkout.payway.com.kh/plugins/checkout2-0.js"></script>
 <script>
-    /*──────────────────────────────────────────────────────────────────
-     |  CHECKOUT SCRIPTS
-     |
-     |  changeQty() strategy: OPTIMISTIC UPDATE
-     |  ─────────────────────────────────────────
-     |  1. Client immediately calculates the new totals (price × qty)
-     |  2. Odometer events fire INSTANTLY — zero perceived delay
-     |  3. AJAX runs in background to sync the Laravel session
-     |  4. If server rejects (stock, etc.) → roll the UI back
-     |  5. If server succeeds → optionally correct from truth values
-     |
-     |  This keeps the animation snappy while the backend stays
-     |  the authoritative source of truth.
-     ──────────────────────────────────────────────────────────────────*/
-
-    /* Track grand total in JS so we can compute deltas client-side */
+    // Track grand total in JS so we can compute deltas client-side
     let _prevTotal = {{ $finalTotal ?? ($discountedTotal ?? ($total ?? 0)) }};
 
-    /*──────────────────────────────────────────────────────────────────
-    |  VOUCHER SYSTEM (Multiple / Per-Item)
-    |  ─────────────────────────────────────
-    |  Supports applying a unique voucher code to each product row.
-    ──────────────────────────────────────────────────────────────────*/
-
+    // VOUCHER SYSTEM (Multiple / Per-Item)
     function applyVoucher(productId = null) {
         if (!productId) return;
 
@@ -149,7 +129,7 @@
         // but we can keep the uppercase transform if needed.
     });
 
-    /* ── button state ── */
+    // button state
     function syncButtonStates(productId) {
         const qtyEl = document.getElementById('qty-' + productId);
         const btnPlus = document.getElementById('btn-plus-' + productId);
@@ -164,7 +144,7 @@
         if (btnPlus) btnPlus.disabled = (qty >= max);
     }
 
-    /* ── helpers ── */
+    // helpers 
     function _fireRowEvent(productId, total, direction) {
         window.dispatchEvent(new CustomEvent('row-price-updated-' + productId, {
             detail: {
@@ -183,7 +163,7 @@
         }));
     }
 
-    /* ── main qty handler ── */
+    // Main qty handler 
     function changeQty(productId, delta) {
         const qtyEl = document.getElementById('qty-' + productId);
         const btnPlus = document.getElementById('btn-plus-' + productId);
@@ -195,7 +175,7 @@
         const max = parseInt(qtyEl.dataset.max ?? Infinity, 10);
         const newQty = currentQty + delta;
 
-        /* ── client-side boundary guard ── */
+        // client-side boundary guard 
         if (newQty < min) {
             showToast('Minimum quantity is 1.', 'warning');
             return;
@@ -205,24 +185,24 @@
             return;
         }
 
-        /* ── compute new totals client-side ── */
+        // compute new totals client-side 
         const oldRowTotal = unitPrice * currentQty;
         const newRowTotal = unitPrice * newQty;
         const oldGrandTotal = _prevTotal;
         const newGrandTotal = oldGrandTotal + (newRowTotal - oldRowTotal);
         const direction = delta > 0 ? 'up' : 'down';
 
-        /* ──────────────────────────────────────────────────
-         |  OPTIMISTIC UPDATE — fire odometers NOW, before
-         |  the network request even starts. The UI feels
-         |  instant. We'll roll back if the server says no.
-         ──────────────────────────────────────────────────*/
+        /* 
+            OPTIMISTIC UPDATE — fire odometers NOW, before
+            the network request even starts. The UI feels
+            instant. We'll roll back if the server says no.
+         */
         qtyEl.textContent = newQty;
         _fireRowEvent(productId, newRowTotal, direction);
         _fireGrandEvent(newGrandTotal, direction);
         _prevTotal = newGrandTotal;
 
-        /* Update Sub Total text instantly (plain span, not odometer) */
+        // Update Sub Total text instantly (plain span, not odometer) 
         const subDisplay = document.getElementById('subtotal-display');
         if (subDisplay) {
             subDisplay.textContent = '$' + newGrandTotal.toLocaleString('en-US', {
@@ -233,11 +213,11 @@
 
         syncButtonStates(productId);
 
-        /* Disable buttons just during flight to prevent double-submit */
+        // Disable buttons just during flight to prevent double-submit 
         if (btnPlus) btnPlus.disabled = true;
         if (btnMinus) btnMinus.disabled = true;
 
-        /* ── background AJAX — sync the session & validate stock ── */
+        // background AJAX — sync the session & validate stock 
         fetch('{{ route('cart.update') }}', {
                 method: 'POST',
                 headers: {
@@ -254,15 +234,15 @@
                 const data = await res.json();
 
                 if (!res.ok || !data.success) {
-                    /* ── ROLLBACK ── */
+                    // ROLLBACK 
                     qtyEl.textContent = currentQty;
 
-                    /* Update stock cap if the server's truth differs */
+                    // Update stock cap if the server's truth differs 
                     if (data.available_stock !== undefined) {
                         qtyEl.dataset.max = data.available_stock;
                     }
 
-                    /* Roll back odometers and subtotal display */
+                    // Roll back odometers and subtotal display 
                     const rollDirection = direction === 'up' ? 'down' : 'up';
                     _fireRowEvent(productId, oldRowTotal, rollDirection);
                     _fireGrandEvent(oldGrandTotal, rollDirection);
@@ -276,9 +256,9 @@
                     showToast(data.message || 'Error updating cart.', 'error');
                 } else {
                     /*
-                     * Server confirmed. Always correct the odometer and _prevTotal
-                     * from server truth to prevent display drift on the Total.
-                     * Use serverGrand if returned, otherwise keep the optimistic value.
+                        Server confirmed. Always correct the odometer and _prevTotal
+                        from server truth to prevent display drift on the Total.
+                        Use serverGrand if returned, otherwise keep the optimistic value.
                      */
                     const serverRow = parseFloat(data.row_subtotal);
                     const serverGrand = parseFloat(data.grand_total);
@@ -310,7 +290,7 @@
                 syncButtonStates(productId);
             })
             .catch(err => {
-                /* ── ROLLBACK on network failure ── */
+                // ROLLBACK on network failure 
                 qtyEl.textContent = currentQty;
                 const rollDirection = direction === 'up' ? 'down' : 'up';
                 _fireRowEvent(productId, oldRowTotal, rollDirection);
@@ -323,14 +303,14 @@
             });
     }
 
-    /* ── init button states on page load ── */
+    // init button states on page load 
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('[id^="qty-"]').forEach(el => {
             syncButtonStates(el.id.replace('qty-', ''));
         });
     });
 
-    /*──────────────────────────────────────────────────────────────────
+    /*
      |  CHECKOUT BUTTON — fetch fresh ABA params, then open popup
      |
      |  Why we re-fetch before every popup open:
@@ -338,7 +318,7 @@
      |  user changes quantity after load, those values become stale. We
      |  get fresh params from payment.prepare (which uses the current cart)
      |  so the ABA KHQR popup always shows the correct, up-to-date total.
-     ──────────────────────────────────────────────────────────────────*/
+     */
     $(document).ready(function() {
         $('#checkout_button').on('click', function(e) {
             e.preventDefault();
@@ -347,6 +327,8 @@
             const txt = document.getElementById('checkout_text');
             btn.prop('disabled', true);
             if (txt) txt.textContent = 'Processing…';
+
+            const addressId = $('input[name="selected_address_id"]:checked').val();
 
             // Fetch fresh payment params (hash, amount, tran_id, req_time)
             // so the ABA popup always reflects the current cart total
@@ -357,6 +339,9 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json',
                     },
+                    body: JSON.stringify({
+                        address_id: addressId
+                    }),
                 })
                 .then(async res => {
                     const data = await res.json();
@@ -381,7 +366,7 @@
                     btn.prop('disabled', false);
                     if (txt) txt.textContent = 'Checkout Now';
 
-                    // Open ABA PayWay KHQR popup — now with up-to-date amount
+                    // Open ABA PayWay KHQR popup now with up-to-date amount
                     if ($('.payment_option:checked').length > 0) {
                         $('#aba_merchant_request').append($('.payment_option:checked'));
                     }
@@ -395,9 +380,7 @@
         });
     });
 
-    /*──────────────────────────────────────────────────────────────────
-     |  TOAST SYSTEM
-     ──────────────────────────────────────────────────────────────────*/
+    // TOAST SYSTEM
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         if (!container) return;
@@ -432,7 +415,7 @@
         });
     }
 
-    /* Display server-side flash messages as toasts */
+    // Display server-side flash messages as toasts 
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.server-toast').forEach(el => {
             showToast(el.textContent.trim(), el.dataset.type ?? 'success');
