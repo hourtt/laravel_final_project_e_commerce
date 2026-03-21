@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-12 bg-gray-50/50 min-h-screen" x-data="{ activeTab: 'profiles' }">
+    <div class="py-12 bg-gray-50/50 min-h-screen" x-data="{ activeTab: '{{ request()->query('tab', 'profiles') }}' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
             <!-- Profile Hero Section -->
@@ -105,7 +105,7 @@
             <!--  Dashboard Stats Grid (Hidden for Admins) -->
             @if ($user->role !== 'admin')
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <!-- Stat: Total Orders -->
+                    <!-- Total Orders -->
                     <div
                         class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
                         <div
@@ -119,7 +119,7 @@
                         <p class="text-3xl font-black text-gray-900 mt-1">{{ $totalOrders }}</p>
                     </div>
 
-                    <!-- Stat: Total Spent -->
+                    <!--  Total Spent -->
                     <div
                         class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
                         <div
@@ -134,7 +134,7 @@
                         <p class="text-3xl font-black text-gray-900 mt-1">${{ number_format($totalSpent, 2) }}</p>
                     </div>
 
-                    <!-- Stat: Total Saved -->
+                    <!-- Total Saved -->
                     <div
                         class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
                         <div
@@ -217,6 +217,19 @@
                         Password & Security
                     </button>
 
+                    <button @click="activeTab = 'address'"
+                        :class="activeTab === 'address' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' :
+                            'bg-white text-gray-600 hover:bg-gray-50 border border-transparent'"
+                        class="w-full flex items-center gap-3 px-5 py-4 rounded-2xl font-bold text-sm transition-all duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+                            fill="currentColor">
+                            <path
+                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                        </svg>
+
+                        Address
+                    </button>
+
                     <div class="mt-4 border-t border-gray-100">
                         <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                             @csrf
@@ -235,7 +248,7 @@
 
                 <!-- Right Column: Content Area -->
                 <div class="flex-1">
-                    <!-- Tab: Profiles -->
+                    <!-- Profiles -->
                     <div x-show="activeTab === 'profiles'" x-transition:enter="transition ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4"
                         x-transition:enter-end="opacity-100 translate-y-0">
@@ -246,7 +259,7 @@
                         </div>
                     </div>
 
-                    <!-- Tab: Password & Security -->
+                    <!-- Password & Security -->
                     <div x-show="activeTab === 'security'" x-transition:enter="transition ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4"
                         x-transition:enter-end="opacity-100 translate-y-0">
@@ -263,6 +276,17 @@
                             </div>
                             <div class="max-w-xl relative text-left">
                                 @include('profile.partials.delete-user-form')
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Address -->
+                    <div x-show="activeTab === 'address'" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4"
+                        x-transition:enter-end="opacity-100 translate-y-0">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                            <div class="max-w-3xl mx-auto">
+                                @include('profile.partials.address_form')
                             </div>
                         </div>
                     </div>
