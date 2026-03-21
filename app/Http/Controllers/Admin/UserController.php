@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    // Display the list of all users 
     public function index()
     {
         $users = User::latest()->get();
