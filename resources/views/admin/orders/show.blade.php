@@ -108,6 +108,38 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Shipping Address Card --}}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Shipping Address
+                </h3>
+                
+                @if($order->shipping_full_name || $order->address_id)
+                    @php
+                        $name = $order->shipping_full_name ?: ($order->shippingAddress->full_name ?? '');
+                        $phone = $order->shipping_phone_number ?: ($order->shippingAddress->phone_number ?? '');
+                        $street = $order->shipping_street_address ?: ($order->shippingAddress->street_address ?? '');
+                        $city = $order->shipping_city ?: ($order->shippingAddress->city ?? '');
+                        $state = $order->shipping_state ?: ($order->shippingAddress->state ?? '');
+                        $postcode = $order->shipping_postal_code ?: ($order->shippingAddress->postal_code ?? '');
+                        $country = $order->shipping_country ?: ($order->shippingAddress->country ?? '');
+                    @endphp
+                    
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-gray-800">{{ $name }}</p>
+                        <p class="text-xs text-gray-500">{{ $phone }}</p>
+                        <div class="text-xs text-gray-600 mt-2 space-y-1">
+                            <p>{{ $street }}</p>
+                            <p>{{ $city }}, {{ $state }} {{ $postcode }}</p>
+                            <p class="text-gray-400 font-bold uppercase text-[10px]">{{ $country }}</p>
+                        </div>
+                    </div>
+                @else
+                    <p class="text-xs text-gray-400 italic">No address recorded</p>
+                @endif
+            </div>
         </div>
 
         <div class="space-y-6">
