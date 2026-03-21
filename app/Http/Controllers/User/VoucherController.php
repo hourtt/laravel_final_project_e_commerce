@@ -30,7 +30,7 @@ class VoucherController extends Controller
         // 2. Status & Expiry & Usage limit (Model-based validation)
         // Load the targeted product
         $product = $productId ? Product::find($productId) : null;
-        $result  = $voucher->isValid($product);
+        $result = $voucher->isValid($product);
         if (!$result['valid']) {
             return response()->json(['success' => false, 'message' => $result['message']], 422);
         }
@@ -50,7 +50,7 @@ class VoucherController extends Controller
         if ($userId) {
             $alreadyUsed = OrderItem::where('voucher_code', $voucher->code)
                 ->whereHas('order', function ($query) use ($userId) {
-                    $query->where('user_id', $userId)->where('status', 'Completed');
+                    $query->where('user_id', $userId)->whereIn('status', ['Completed', 'Pending']);
                 })
                 ->exists();
 
@@ -72,10 +72,10 @@ class VoucherController extends Controller
                 ], 422);
             }
         }
-        
+
         // 6. Prevent multiple vouchers on the SAME product (one voucher per item line)
         if ($productId && isset($appliedVouchers[$productId])) {
-             return response()->json([
+            return response()->json([
                 'success' => false,
                 'message' => 'A voucher is already applied to this product.',
             ], 422);
@@ -83,45 +83,46 @@ class VoucherController extends Controller
 
         // 7. Calculate Discount
         // If it's a shop-wide voucher (no product_id/category_id), apply to the specific item clicked
-        // Or if it's tied to product/category, apply to THAT item.
+        // Or if it's tied to product/category, apply to that item.
         // If no product_id was sent (legacy), we apply to the whole cart? 
         // For this refactor, we assume product_id is sent from the per-item UI.
-        if (!$productId) {
-            return response()->json(['success' => false, 'message' => 'Please apply the voucher to a specific product.'], 422);
-        }
 
-        $itemQty   = $cart[$productId]['quantity'];
+        $itemQty = $cart[$productId]['quantity'];
         $itemTotal = $product->price * $itemQty;
         $discountAmount = $voucher->calculateDiscount($itemTotal);
 
         // Store in session
         $appliedVouchers[$productId] = [
-            'id'       => $voucher->id,
-            'code'     => $voucher->code,
+            'id' => $voucher->id,
+            'code' => $voucher->code,
             'discount' => $discountAmount,
         ];
         session(['applied_vouchers' => $appliedVouchers]);
 
-        // Recalculate totals for response
-        $totalSubtotal = 0;
+        // array_key() returns only keys from the cart array (product ids and not values)
+        $productIds = array_keys($cart);
+        // Use whereIn() to fetch multiple products in the cart at once
+        $cartProducts = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $subtotal = 0;
         foreach ($cart as $id => $item) {
-            $p = Product::find($id);
-            if ($p) $totalSubtotal += $p->price * $item['quantity'];
+            if (isset($cartProducts[$id])) {
+                $subtotal += $cartProducts[$id]->price * $item['quantity'];
+            }
         }
 
         $totalDiscount = array_sum(array_column($appliedVouchers, 'discount'));
-        $finalTotal    = max(0, $totalSubtotal - $totalDiscount);
+        $finalTotal = max(0, $subtotal - $totalDiscount);
 
         return response()->json([
-            'success'         => true,
-            'message'         => 'Voucher applied to ' . $product->name,
-            'voucher_code'    => $voucher->code,
-            'item_id'         => $productId,
+            'success' => true,
+            'message' => 'Voucher applied to ' . $product->name,
+            'voucher_code' => $voucher->code,
+            'item_id' => $productId,
             'discount_amount' => round($discountAmount, 2),
-            'total_discount'  => round($totalDiscount, 2),
-            'subtotal'        => round($totalSubtotal, 2),
-            'final_total'     => round($finalTotal, 2),
-            'applied_vouchers'=> $appliedVouchers,
+            'total_discount' => round($totalDiscount, 2),
+            'subtotal' => round($subtotal, 2),
+            'final_total' => round($finalTotal, 2),
+            'applied_vouchers' => $appliedVouchers,
         ]);
     }
 
@@ -129,6 +130,9 @@ class VoucherController extends Controller
     public function remove(Request $request)
     {
         $productId = $request->product_id;
+        $request->validate([
+            'product_id' => 'required|integer|exists:products,id',
+        ]);
         $appliedVouchers = session()->get('applied_vouchers', []);
 
         if (isset($appliedVouchers[$productId])) {
@@ -139,20 +143,23 @@ class VoucherController extends Controller
         // Recalculate
         $cart = session()->get('cart', []);
         $totalSubtotal = 0;
+
+        $productIds = array_keys($cart);
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
         foreach ($cart as $id => $item) {
-            $p = Product::find($id);
-            if ($p) $totalSubtotal += $p->price * $item['quantity'];
+            if (isset($products[$id]))
+                $totalSubtotal += $products[$id]->price * $item['quantity'];
         }
 
         $totalDiscount = array_sum(array_column($appliedVouchers, 'discount'));
-        $finalTotal    = max(0, $totalSubtotal - $totalDiscount);
+        $finalTotal = max(0, $totalSubtotal - $totalDiscount);
 
         return response()->json([
-            'success'        => true,
-            'message'        => 'Voucher removed.',
+            'success' => true,
+            'message' => 'Voucher removed.',
             'total_discount' => round($totalDiscount, 2),
-            'subtotal'       => round($totalSubtotal, 2),
-            'final_total'    => round($finalTotal, 2),
+            'subtotal' => round($totalSubtotal, 2),
+            'final_total' => round($finalTotal, 2),
         ]);
     }
 }
