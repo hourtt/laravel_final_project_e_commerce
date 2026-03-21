@@ -134,8 +134,12 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @forelse($recentProducts as $product)
-                            @php 
-                                $clr = $categoryColors[$product->category->name ?? ''] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'dot' => 'bg-gray-400'];
+                            @php
+                                $clr = $categoryColors[$product->category->name ?? ''] ?? [
+                                    'bg' => 'bg-gray-50',
+                                    'text' => 'text-gray-600',
+                                    'dot' => 'bg-gray-400',
+                                ];
                                 $catIcon = $product->category->icon ?? '📦';
                             @endphp
                             <tr class="hover:bg-slate-50/50 transition-colors">
@@ -147,10 +151,10 @@
                                         @else
                                             <div
                                                 class="w-10 h-10 {{ $clr['bg'] }} rounded-lg flex items-center justify-center text-lg flex-shrink-0">
-                                                @if(str_contains($catIcon, 'images/category/'))
-                                                    <img src="{{ asset(str_replace('public/', '', $catIcon)) }}" 
-                                                         alt="{{ $product->category->name ?? '' }}" 
-                                                         class="w-6 h-6 object-contain">
+                                                @if (str_contains($catIcon, 'images/category/'))
+                                                    <img src="{{ asset(str_replace('public/', '', $catIcon)) }}"
+                                                        alt="{{ $product->category->name ?? '' }}"
+                                                        class="w-6 h-6 object-contain">
                                                 @else
                                                     {{ $catIcon }}
                                                 @endif
@@ -259,17 +263,20 @@
                 </div>
                 <div class="p-5 space-y-3">
                     @foreach ($categoryStats as $stat)
-                        @php 
-                            $clr = $categoryColors[$stat->name] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'dot' => 'bg-gray-400'];
+                        @php
+                            $clr = $categoryColors[$stat->name] ?? [
+                                'bg' => 'bg-gray-50',
+                                'text' => 'text-gray-600',
+                                'dot' => 'bg-gray-400',
+                            ];
                             $catIcon = $stat->icon ?? '📦';
                         @endphp
                         <div class="flex items-center gap-3">
                             <div
                                 class="w-9 h-9 {{ $clr['bg'] }} rounded-xl flex items-center justify-center text-lg flex-shrink-0">
-                                @if(str_contains($catIcon, 'images/category/'))
-                                    <img src="{{ asset(str_replace('public/', '', $catIcon)) }}" 
-                                         alt="{{ $stat->name }}" 
-                                         class="w-5 h-5 object-contain">
+                                @if (str_contains($catIcon, 'images/category/'))
+                                    <img src="{{ asset(str_replace('public/', '', $catIcon)) }}"
+                                        alt="{{ $stat->name }}" class="w-5 h-5 object-contain">
                                 @else
                                     {{ $catIcon }}
                                 @endif
