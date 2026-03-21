@@ -22,8 +22,9 @@ class ProfileController extends Controller
         $totalOrders = $user->orders()->count();
         $totalSpent  = $user->orders()->where('status', 'Completed')->sum('total_price');
         $totalSaved  = $user->orders()->sum('voucher_discount') ?? 0;
+        $addresses   = $user->addresses()->orderBy('is_default', 'desc')->get();
 
-        return view('profile.edit', compact('user', 'totalOrders', 'totalSpent', 'totalSaved'));
+        return view('profile.edit', compact('user', 'totalOrders', 'totalSpent', 'totalSaved', 'addresses'));
     }
 
     // Update the user's profile information.
