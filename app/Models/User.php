@@ -58,6 +58,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the addresses for the user.
+     */
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    /**
      * Get the URL for the user's profile image.
      */
     public function getProfileImageUrlAttribute(): string
