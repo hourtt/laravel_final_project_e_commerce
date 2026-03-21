@@ -23,15 +23,20 @@ class Voucher extends Model
     ];
 
     protected $casts = [
+        'status' => 'boolean',
         'expires_at' => 'datetime',
-        'status'     => 'boolean',
+        'discount_type' => 'string',
+        'discount_value' => 'float',
     ];
 
-   // Ensure boolean status is stored correctly for Postgres using DB::raw.
-
+    /**
+     * Postgres Fix: Ensure boolean status is stored correctly using raw SQL literals.
+     * This avoids "datatype mismatch: integer vs boolean" errors in Supabase/Postgres.
+     */
     public function setStatusAttribute($value)
     {
-        $this->attributes['status'] = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? \DB::raw('true') : \DB::raw('false');
+        $bool = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        $this->attributes['status'] = $bool ? \DB::raw('true') : \DB::raw('false');
     }
 
     // Relationship: the specific product this voucher is tied to (nullable).
@@ -74,14 +79,14 @@ class Voucher extends Model
 
         // If tied to a specific product, check that the user is buying it
         if ($this->product_id !== null) {
-            if (!$product || (int)$this->product_id !== (int)$product->id) {
+            if (!$product || (int) $this->product_id !== (int) $product->id) {
                 return ['valid' => false, 'message' => 'This voucher code is only valid for "' . ($this->product->name ?? 'a specific product') . '".'];
             }
         }
 
         // If tied to a specific category, check that the product belongs to it
         if ($this->category_id !== null) {
-            if (!$product || (int)$this->category_id !== (int)$product->category_id) {
+            if (!$product || (int) $this->category_id !== (int) $product->category_id) {
                 return ['valid' => false, 'message' => 'This voucher code is only valid for products in the "' . ($this->category->name ?? 'specific category') . '" category.'];
             }
         }
@@ -92,6 +97,7 @@ class Voucher extends Model
     // Calculate the discount amount for a given subtotal.
     public function calculateDiscount(float $subtotal): float
     {
+        // If the discount type is percentage
         if ($this->discount_type === 'percentage') {
             $discount = $subtotal * ($this->discount_value / 100);
         } else {
