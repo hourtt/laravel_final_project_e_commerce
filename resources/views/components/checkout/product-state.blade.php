@@ -1,10 +1,8 @@
  <h1 class="text-3xl font-bold text-gray-900 mb-8 tracking-tight">Shopping Cart</h1>
  @php $appliedVouchers = $appliedVouchers ?? []; @endphp
  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-     {{-- ═══════════════════════════════════════
-                LEFT COLUMN — Cart Table
-                ═══════════════════════════════════════ --}}
-     <div class="lg:col-span-2">
+     <div class="lg:col-span-2 space-y-8">
+         {{-- Item in cart section --}}
          <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
 
              {{-- Column headers --}}
@@ -117,11 +115,7 @@
                              {{ $item['quantity'] >= $product->stock ? 'disabled' : '' }}>+</button>
                      </div>
 
-                     {{-- ── ROW SUBTOTAL ODOMETER ───────────────────────────────
-                          Driven by the 'row-price-updated-{id}' custom event.
-                          Uses drumStyle(d) for instant-snap on load, animated
-                          on updates.
-                     ──────────────────────────────────────────────────────────── --}}
+                     {{-- ROW SUBTOTAL ODOMETER --}}
                      <div class="text-right" x-data="priceOdometer({{ $item['subtotal'] }})"
                          x-on:row-price-updated-{{ $product->id }}.window="onPriceUpdated($event.detail)">
                          <div class="odometer-wrapper inline-flex items-baseline gap-0 text-sm font-bold leading-none select-none"
@@ -170,6 +164,82 @@
 
          </div>
 
+         {{-- ── Shipping Address Section ── --}}
+         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8" x-data="{ selectedAddress: {{ count($addresses) > 0 ? $addresses->where('is_default', true)->first()->id ?? $addresses->first()->id : 'null' }}, showNewForm: {{ count($addresses) === 0 ? 'true' : 'false' }} }">
+             <div class="flex items-center justify-between mb-6">
+                 <h2 class="text-xl font-bold text-gray-900 border-l-4 border-blue-600 pl-4">Shipping Address</h2>
+                 <button @click="showNewForm = !showNewForm"
+                     class="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-2">
+                     <span x-text="showNewForm ? '✕ Cancel' : '+ Add New Address'"></span>
+                 </button>
+             </div>
+
+             @if (count($addresses) > 0)
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" x-show="!showNewForm">
+                     @foreach ($addresses as $address)
+                         <label class="relative cursor-pointer group">
+                             <input type="radio" name="selected_address_id" value="{{ $address->id }}"
+                                 class="sr-only" x-model="selectedAddress">
+                             <div class="h-full p-5 rounded-2xl border-2 transition-all group-hover:shadow-md"
+                                 :class="selectedAddress == '{{ $address->id }}' ? 'border-blue-600 bg-blue-50/30' :
+                                     'border-gray-100 bg-white hover:border-blue-200'">
+
+                                 <div class="flex justify-between items-start mb-2">
+                                     <div class="flex items-center gap-2">
+                                         <h4 class="font-bold text-gray-900 text-sm truncate max-w-[150px]">
+                                             {{ $address->full_name }}</h4>
+                                         <span
+                                             class="px-2 py-0.5 rounded text-[9px] font-bold uppercase transition-colors {{ $address->address_type === 'Home' ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600' }}">
+                                             {{ $address->address_type }}
+                                         </span>
+                                     </div>
+                                     <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                                         :class="selectedAddress == '{{ $address->id }}' ?
+                                             'border-blue-600 bg-blue-600 text-white' : 'border-gray-200 bg-white'">
+                                         <svg x-show="selectedAddress == '{{ $address->id }}'" class="w-3.5 h-3.5"
+                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                                 d="M5 13l4 4L19 7" />
+                                         </svg>
+                                     </div>
+                                 </div>
+
+                                 <div class="text-[11px] text-gray-500 space-y-1">
+                                     <p class="flex items-center gap-1.5 font-medium">
+                                         <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                 d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                         </svg>
+                                         {{ $address->phone_number }}
+                                     </p>
+                                     <p class="leading-relaxed opacity-80">{{ $address->street_address }},
+                                         {{ $address->city }}, {{ $address->state }} {{ $address->postal_code }},
+                                         {{ $address->country }}</p>
+                                 </div>
+
+                                 @if ($address->is_default)
+                                     <div
+                                         class="mt-3 flex items-center gap-1 text-[9px] font-bold text-blue-600 uppercase tracking-widest">
+                                         <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                             <path
+                                                 d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                         </svg>
+                                         Default Address
+                                     </div>
+                                 @endif
+                             </div>
+                         </label>
+                     @endforeach
+                 </div>
+             @endif
+
+             <div x-show="showNewForm" x-collapse>
+                 <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                     @include('profile.partials.address_form', ['addresses' => []]) {{-- Empty addresses to hide listing within include --}}
+                 </div>
+             </div>
+         </div>
      </div>
 
      {{-- ═══════════════════════════════════════
